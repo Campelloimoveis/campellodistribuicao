@@ -98,7 +98,14 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
 <div class="card-header"><h2>1. Cliente</h2><button class="btn btn-light" type="button" onclick="openClientModal()">+ Cadastrar novo cliente</button></div>
 <div class="card-body">
   <div class="row">
-    <div><label>Nome / Razão social</label><input id="clientName" placeholder="Ex.: Mercado São José"></div>
+    <div>
+  <label>Nome / Razão social</label>
+  <div class="search-wrap">
+    <input id="clientName" autocomplete="off" placeholder="Buscar cliente ou digitar um nome...">
+    <div id="clientResults" class="search-results"></div>
+  </div>
+  <div id="clientLoading" class="loading">Consultando clientes...</div>
+</div>
     <div><label>WhatsApp</label><input id="clientWhatsapp" placeholder="(31) 99999-9999"></div>
   </div>
   <div class="spacer"></div>
@@ -106,7 +113,7 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
     <div><label>CNPJ / CPF</label><input id="clientDoc" placeholder="Opcional"></div>
     <div><label>Vendedor</label><input id="seller" value="Representante 01"></div>
   </div>
-  <div class="helper">Você pode digitar um cliente apenas para esta venda ou cadastrá-lo pelo botão acima.</div>
+  <div class="helper">Digite pelo menos 2 caracteres para buscar um cliente já cadastrado ou use “+ Cadastrar novo cliente”.</div>
 </div>
 </section>
 
@@ -298,11 +305,12 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwfE2sJ8-BpfYqlZAUbm4t4
 const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1NEUqOmKlhiH-q9TmE-McRD2QLAMFKLBiV6i8MFXb0Hw/edit?gid=1595423847#gid=1595423847';
 const SPREADSHEET_ID = SPREADSHEET_URL.match(/\/d\/([a-zA-Z0-9-_]+)/)[1];
 
-let accessPin = sessionStorage.getItem('campello_pin') || '';
+let selectedClient = null;
 let selected = null;
 let cart = [];
 let savedOrder = null;
 let searchTimer = null;
+let clientSearchTimer = null;
 
 const $ = id => document.getElementById(id);
 const money = v => Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -407,6 +415,102 @@ async function tryStoredPin(){
   } catch(e) {}
 }
 
+
+$('clientName').addEventListener('input', e => {
+  const q = e.target.value.trim();
+
+  selectedClient = null;
+  clearTimeout(clientSearchTimer);
+
+  if (q.length < 2) {
+    $('clientResults').style.display = 'none';
+    return;
+  }
+
+  clientSearchTimer =
+    setTimeout(() => searchClients(q), 280);
+});
+
+
+async function searchClients(q){
+  $('clientLoading').style.display = 'block';
+
+  try {
+    const data =
+      await apiGet('clients', { q });
+
+    if (!data.ok) {
+      throw new Error(
+        data.erro ||
+        data.error ||
+        'Erro ao consultar clientes.'
+      );
+    }
+
+    renderClients(data.clientes || []);
+
+  } catch(err) {
+    toast(err.message || String(err));
+
+  } finally {
+    $('clientLoading').style.display = 'none';
+  }
+}
+
+
+function renderClients(clientes){
+  const box = $('clientResults');
+
+  if (!clientes.length) {
+    box.innerHTML =
+      '<div class="result"><small>Nenhum cliente encontrado. Você pode cadastrá-lo pelo botão acima.</small></div>';
+
+    box.style.display = 'block';
+    return;
+  }
+
+  box.innerHTML = clientes.map((c,i) => `
+    <div class="result" data-client-i="${i}">
+      <strong>${esc(c.nome)}</strong>
+      <small>
+        ${esc(c.id)}
+        ${c.documento ? ' · ' + esc(c.documento) : ''}
+        ${c.whatsapp ? ' · ' + esc(c.whatsapp) : ''}
+      </small>
+    </div>
+  `).join('');
+
+  box.style.display = 'block';
+
+  [...box.querySelectorAll(
+    '.result[data-client-i]'
+  )].forEach(el => {
+    el.onclick = () =>
+      chooseClient(
+        clientes[
+          Number(el.dataset.clientI)
+        ]
+      );
+  });
+}
+
+
+function chooseClient(c){
+  selectedClient = c;
+
+  $('clientName').value = c.nome || '';
+  $('clientDoc').value = c.documento || '';
+  $('clientWhatsapp').value = c.whatsapp || '';
+
+  if (c.vendedor) {
+    $('seller').value = c.vendedor;
+  }
+
+  $('clientResults').style.display = 'none';
+
+  toast(`Cliente ${c.id} selecionado.`);
+}
+
 $('productSearch').addEventListener('input', e => {
   const q = e.target.value.trim();
   clearTimeout(searchTimer);
@@ -426,12 +530,7 @@ async function searchProducts(q){
     const data = await apiGet('products', { q });
 
     if (!data.ok) {
-      if ((data.error || '').toLowerCase().includes('pin')) {
-        sessionStorage.removeItem('campello_pin');
-        accessPin = '';
-        $('gate').style.display = 'flex';
-      }
-      throw new Error(data.error || 'Erro ao consultar produtos.');
+      throw new Error(data.erro || data.error || 'Erro ao consultar produtos.');
     }
 
     renderResults(normalizeProducts(data.produtos || []));
@@ -664,7 +763,6 @@ function submitRegistration(kind, payload, statusAction){
 
     payload.kind = kind;
     payload.requestId = requestId;
-    payload.pin = accessPin;
     payload.sheetId = SPREADSHEET_ID;
 
     const form = document.createElement('form');
@@ -685,6 +783,7 @@ function submitRegistration(kind, payload, statusAction){
 
     form.appendChild(req);
     form.appendChild(data);
+
     document.body.appendChild(form);
     form.submit();
 
@@ -694,12 +793,21 @@ function submitRegistration(kind, payload, statusAction){
 
     const poll = async () => {
       if (Date.now() - started > 25000) {
-        reject(new Error('O cadastro pode ter sido enviado, mas a confirmação demorou. Confira a planilha antes de tentar novamente.'));
+        reject(
+          new Error(
+            'O cadastro pode ter sido enviado, mas a confirmação demorou. Confira a aba 03_CLIENTES antes de tentar novamente.'
+          )
+        );
         return;
       }
 
       try {
-        const status = await apiGet(statusAction, {requestId}, 8000);
+        const status =
+          await apiGet(
+            statusAction,
+            { requestId },
+            8000
+          );
 
         if (status.pending) {
           setTimeout(poll, 700);
@@ -707,7 +815,13 @@ function submitRegistration(kind, payload, statusAction){
         }
 
         if (!status.ok) {
-          reject(new Error(status.error || 'Não foi possível concluir o cadastro.'));
+          reject(
+            new Error(
+              status.erro ||
+              status.error ||
+              'Não foi possível concluir o cadastro.'
+            )
+          );
           return;
         }
 
@@ -721,6 +835,7 @@ function submitRegistration(kind, payload, statusAction){
     setTimeout(poll, 700);
   });
 }
+
 
 function openClientModal(){
   $('newClientName').value = $('clientName').value.trim();
@@ -758,7 +873,8 @@ async function saveClient(){
       cep: $('newClientCep').value.trim(),
       creditLimit: Number($('newClientCredit').value || 0),
       defaultTerm: $('newClientTerm').value.trim(),
-      notes: $('newClientNotes').value.trim()
+      notes: $('newClientNotes').value.trim(),
+      seller: $('seller').value.trim()
     }
   };
 
@@ -772,15 +888,26 @@ async function saveClient(){
       'clientStatus'
     );
 
-    $('clientName').value = client.name || name;
-    $('clientDoc').value = client.doc || payload.client.doc;
+    $('clientName').value = client.nome || name;
+    $('clientDoc').value = client.documento || payload.client.doc;
     $('clientWhatsapp').value =
       client.whatsapp || payload.client.whatsapp;
 
     closeClientModal();
 
+    selectedClient = {
+      id: client.id,
+      nome: client.nome || name,
+      documento:
+        client.documento ||
+        payload.client.doc,
+      whatsapp:
+        client.whatsapp ||
+        payload.client.whatsapp
+    };
+
     toast(
-      client.existing
+      client.existente
         ? 'Esse cliente já estava cadastrado e foi selecionado.'
         : `Cliente ${client.id} cadastrado com sucesso.`
     );
