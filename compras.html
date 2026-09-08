@@ -21,7 +21,7 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:
 .hero{margin-bottom:18px}.hero h1{margin:0;color:var(--navy);font-size:28px}.hero p{margin:6px 0 0;color:var(--muted)}
 .grid{display:grid;grid-template-columns:1.35fr .9fr;gap:18px}
 .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.04);overflow:visible}
-.card-header{padding:16px 18px;border-bottom:1px solid var(--line)}.card-header h2{margin:0;color:var(--navy);font-size:16px}
+.card-header{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}.card-header h2{margin:0;color:var(--navy);font-size:16px}
 .card-body{padding:18px}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.small-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.spacer{height:14px}
 label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px}
 input,select{width:100%;border:1px solid #cfd6de;border-radius:10px;padding:12px 13px;font-size:15px;background:#fff;outline:none}
@@ -95,7 +95,7 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
 <div>
 
 <section class="card">
-<div class="card-header"><h2>1. Dados da compra</h2></div>
+<div class="card-header"><h2>1. Dados da compra</h2><button class="btn btn-light" type="button" onclick="openSupplierModal()">+ Cadastrar novo fornecedor</button></div>
 <div class="card-body">
   <label>Fornecedor</label>
   <div class="search-wrap">
@@ -198,6 +198,66 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
 
 <div id="toast" class="toast"></div>
 <iframe name="apiPostFrame" id="apiPostFrame" style="display:none"></iframe>
+
+
+<div id="supplierModal" class="modal">
+  <div class="modal-card" style="width:min(760px,100%)">
+    <div class="card-header" style="padding:0 0 14px;margin-bottom:16px">
+      <div>
+        <h2 style="font-size:20px">Cadastrar novo fornecedor</h2>
+        <div class="helper">O cadastro será gravado diretamente em 04_FORNECEDORES.</div>
+      </div>
+      <button class="btn btn-light" type="button" onclick="closeSupplierModal()">Fechar</button>
+    </div>
+
+    <div class="row">
+      <div><label>Razão social / Nome *</label><input id="newSupplierName"></div>
+      <div><label>CNPJ</label><input id="newSupplierDoc"></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="row">
+      <div><label>Inscrição estadual</label><input id="newSupplierIe"></div>
+      <div><label>Contato</label><input id="newSupplierContact"></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="row">
+      <div><label>Telefone / WhatsApp</label><input id="newSupplierPhone"></div>
+      <div><label>E-mail</label><input id="newSupplierEmail" type="email"></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="small-grid">
+      <div><label>Cidade</label><input id="newSupplierCity"></div>
+      <div><label>UF</label><input id="newSupplierUf" maxlength="2" placeholder="MG"></div>
+      <div><label>Prazo padrão</label><input id="newSupplierTerm" placeholder="Ex.: 28 dias"></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="row">
+      <div>
+        <label>Forma de pagamento</label>
+        <select id="newSupplierPayment">
+          <option value="">Selecione</option>
+          <option>Pix</option>
+          <option>Dinheiro</option>
+          <option>Boleto</option>
+          <option>Cartão</option>
+          <option>Transferência</option>
+          <option>Prazo</option>
+          <option>Outro</option>
+        </select>
+      </div>
+      <div><label>Observações</label><input id="newSupplierNotes"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-light" type="button" onclick="closeSupplierModal()">Cancelar</button>
+      <button id="saveSupplierBtn" class="btn btn-primary" type="button" onclick="saveSupplier()">Salvar fornecedor</button>
+    </div>
+  </div>
+</div>
 
 <div id="modal" class="modal">
 <div class="modal-card">
@@ -349,6 +409,154 @@ async function tryStoredPin(){
     const data = await apiGet('ping');
     if (data.ok) $('gate').style.display = 'none';
   } catch(e) {}
+}
+
+
+function submitRegistration(kind, payload, statusAction){
+  return new Promise((resolve, reject) => {
+    const requestId = uniqueId();
+
+    payload.kind = kind;
+    payload.requestId = requestId;
+    payload.pin = accessPin;
+    payload.sheetId = SPREADSHEET_ID;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = API_URL;
+    form.target = 'apiPostFrame';
+    form.style.display = 'none';
+
+    const req = document.createElement('input');
+    req.type = 'hidden';
+    req.name = 'requestId';
+    req.value = requestId;
+
+    const data = document.createElement('input');
+    data.type = 'hidden';
+    data.name = 'payload';
+    data.value = JSON.stringify(payload);
+
+    form.appendChild(req);
+    form.appendChild(data);
+    document.body.appendChild(form);
+    form.submit();
+
+    setTimeout(() => form.remove(), 1500);
+
+    const started = Date.now();
+
+    const poll = async () => {
+      if (Date.now() - started > 25000) {
+        reject(new Error('O cadastro pode ter sido enviado, mas a confirmação demorou. Confira a planilha antes de tentar novamente.'));
+        return;
+      }
+
+      try {
+        const status = await apiGet(statusAction, {requestId}, 8000);
+
+        if (status.pending) {
+          setTimeout(poll, 700);
+          return;
+        }
+
+        if (!status.ok) {
+          reject(new Error(status.error || 'Não foi possível concluir o cadastro.'));
+          return;
+        }
+
+        resolve(status.result);
+
+      } catch(err) {
+        setTimeout(poll, 900);
+      }
+    };
+
+    setTimeout(poll, 700);
+  });
+}
+
+function openSupplierModal(){
+  $('newSupplierName').value = '';
+  $('newSupplierDoc').value = '';
+  $('newSupplierIe').value = '';
+  $('newSupplierContact').value = '';
+  $('newSupplierPhone').value = '';
+  $('newSupplierEmail').value = '';
+  $('newSupplierCity').value = '';
+  $('newSupplierUf').value = '';
+  $('newSupplierTerm').value = '';
+  $('newSupplierPayment').value = '';
+  $('newSupplierNotes').value = '';
+
+  $('supplierModal').style.display = 'flex';
+}
+
+function closeSupplierModal(){
+  $('supplierModal').style.display = 'none';
+}
+
+async function saveSupplier(){
+  const name = $('newSupplierName').value.trim();
+
+  if (!name) {
+    toast('Informe a razão social / nome do fornecedor.');
+    return;
+  }
+
+  const payload = {
+    supplier: {
+      name,
+      doc: $('newSupplierDoc').value.trim(),
+      ie: $('newSupplierIe').value.trim(),
+      contact: $('newSupplierContact').value.trim(),
+      phone: $('newSupplierPhone').value.trim(),
+      email: $('newSupplierEmail').value.trim(),
+      city: $('newSupplierCity').value.trim(),
+      uf: $('newSupplierUf').value.trim(),
+      defaultTerm: $('newSupplierTerm').value.trim(),
+      payment: $('newSupplierPayment').value,
+      notes: $('newSupplierNotes').value.trim()
+    }
+  };
+
+  $('saveSupplierBtn').disabled = true;
+  $('saveSupplierBtn').textContent = 'Salvando...';
+
+  try {
+    const supplier = await submitRegistration(
+      'supplier',
+      payload,
+      'supplierStatus'
+    );
+
+    selectedSupplierData = supplier;
+
+    $('supplierSearch').value = supplier.name;
+    $('supplierName').textContent = supplier.name;
+
+    $('supplierMeta').textContent =
+      `${supplier.id}` +
+      (supplier.doc ? ` · ${supplier.doc}` : '') +
+      (supplier.city ? ` · ${supplier.city}${supplier.state ? '/' + supplier.state : ''}` : '');
+
+    $('selectedSupplier').style.display = 'block';
+
+    closeSupplierModal();
+
+    toast(
+      supplier.existing
+        ? 'Esse fornecedor já estava cadastrado e foi selecionado.'
+        : `Fornecedor ${supplier.id} cadastrado com sucesso.`
+    );
+
+  } catch(err) {
+    toast(err.message || String(err));
+
+  } finally {
+    $('saveSupplierBtn').disabled = false;
+    $('saveSupplierBtn').textContent = 'Salvar fornecedor';
+  }
 }
 
 $('supplierSearch').addEventListener('input', e => {

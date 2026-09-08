@@ -22,7 +22,7 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:
 .hero{margin-bottom:18px}.hero h1{margin:0;color:var(--navy);font-size:28px}.hero p{margin:6px 0 0;color:var(--muted)}
 .grid{display:grid;grid-template-columns:1.35fr .9fr;gap:18px}
 .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.04);overflow:visible}
-.card-header{padding:16px 18px;border-bottom:1px solid var(--line)}.card-header h2{margin:0;color:var(--navy);font-size:16px}
+.card-header{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}.card-header h2{margin:0;color:var(--navy);font-size:16px}
 .card-body{padding:18px}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.spacer{height:14px}
 label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px}
 input,select{width:100%;border:1px solid #cfd6de;border-radius:10px;padding:12px 13px;font-size:15px;background:#fff;outline:none}
@@ -93,7 +93,7 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
 <div>
 
 <section class="card">
-<div class="card-header"><h2>1. Cliente</h2></div>
+<div class="card-header"><h2>1. Cliente</h2><button class="btn btn-light" type="button" onclick="openClientModal()">+ Cadastrar novo cliente</button></div>
 <div class="card-body">
   <div class="row">
     <div><label>Nome / Razão social</label><input id="clientName" placeholder="Ex.: Mercado São José"></div>
@@ -104,7 +104,7 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
     <div><label>CNPJ / CPF</label><input id="clientDoc" placeholder="Opcional"></div>
     <div><label>Vendedor</label><input id="seller" value="Representante 01"></div>
   </div>
-  <div class="helper">Cliente novo será incluído na aba 03_CLIENTES quando o pedido for finalizado.</div>
+  <div class="helper">Você pode digitar um cliente apenas para esta venda ou cadastrá-lo pelo botão acima.</div>
 </div>
 </section>
 
@@ -189,6 +189,65 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
 
 <div id="toast" class="toast"></div>
 <iframe name="apiPostFrame" id="apiPostFrame" style="display:none"></iframe>
+
+
+<div id="clientModal" class="modal">
+  <div class="modal-card" style="width:min(760px,100%)">
+    <div class="card-header" style="padding:0 0 14px;margin-bottom:16px">
+      <div>
+        <h2 style="font-size:20px">Cadastrar novo cliente</h2>
+        <div class="helper">O cadastro será gravado diretamente em 03_CLIENTES.</div>
+      </div>
+      <button class="btn btn-light" type="button" onclick="closeClientModal()">Fechar</button>
+    </div>
+
+    <div class="row">
+      <div><label>Nome / Razão social *</label><input id="newClientName"></div>
+      <div><label>CNPJ / CPF</label><input id="newClientDoc"></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="row">
+      <div><label>IE / RG</label><input id="newClientIe"></div>
+      <div><label>Contato</label><input id="newClientContact"></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="row">
+      <div><label>WhatsApp</label><input id="newClientWhatsapp"></div>
+      <div><label>E-mail</label><input id="newClientEmail" type="email"></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="row">
+      <div><label>Endereço</label><input id="newClientAddress"></div>
+      <div><label>Número</label><input id="newClientNumber"></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="small-grid">
+      <div><label>Bairro</label><input id="newClientDistrict"></div>
+      <div><label>Cidade</label><input id="newClientCity"></div>
+      <div><label>UF</label><input id="newClientUf" maxlength="2" placeholder="MG"></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="small-grid">
+      <div><label>CEP</label><input id="newClientCep"></div>
+      <div><label>Limite de crédito</label><input id="newClientCredit" type="number" min="0" step="0.01" value="0"></div>
+      <div><label>Prazo padrão</label><input id="newClientTerm" placeholder="Ex.: 30 dias"></div>
+    </div>
+
+    <div class="spacer"></div>
+    <label>Observações</label>
+    <input id="newClientNotes">
+
+    <div class="modal-actions">
+      <button class="btn btn-light" type="button" onclick="closeClientModal()">Cancelar</button>
+      <button id="saveClientBtn" class="btn btn-primary" type="button" onclick="saveClient()">Salvar cliente</button>
+    </div>
+  </div>
+</div>
 
 <div id="modal" class="modal">
 <div class="modal-card">
@@ -580,6 +639,143 @@ function submitOrder(payload){
 
     setTimeout(poll, 700);
   });
+}
+
+
+function submitRegistration(kind, payload, statusAction){
+  return new Promise((resolve, reject) => {
+    const requestId = uniqueId();
+
+    payload.kind = kind;
+    payload.requestId = requestId;
+    payload.pin = accessPin;
+    payload.sheetId = SPREADSHEET_ID;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = API_URL;
+    form.target = 'apiPostFrame';
+    form.style.display = 'none';
+
+    const req = document.createElement('input');
+    req.type = 'hidden';
+    req.name = 'requestId';
+    req.value = requestId;
+
+    const data = document.createElement('input');
+    data.type = 'hidden';
+    data.name = 'payload';
+    data.value = JSON.stringify(payload);
+
+    form.appendChild(req);
+    form.appendChild(data);
+    document.body.appendChild(form);
+    form.submit();
+
+    setTimeout(() => form.remove(), 1500);
+
+    const started = Date.now();
+
+    const poll = async () => {
+      if (Date.now() - started > 25000) {
+        reject(new Error('O cadastro pode ter sido enviado, mas a confirmação demorou. Confira a planilha antes de tentar novamente.'));
+        return;
+      }
+
+      try {
+        const status = await apiGet(statusAction, {requestId}, 8000);
+
+        if (status.pending) {
+          setTimeout(poll, 700);
+          return;
+        }
+
+        if (!status.ok) {
+          reject(new Error(status.error || 'Não foi possível concluir o cadastro.'));
+          return;
+        }
+
+        resolve(status.result);
+
+      } catch(err) {
+        setTimeout(poll, 900);
+      }
+    };
+
+    setTimeout(poll, 700);
+  });
+}
+
+function openClientModal(){
+  $('newClientName').value = $('clientName').value.trim();
+  $('newClientDoc').value = $('clientDoc').value.trim();
+  $('newClientWhatsapp').value = $('clientWhatsapp').value.trim();
+  $('clientModal').style.display = 'flex';
+}
+
+function closeClientModal(){
+  $('clientModal').style.display = 'none';
+}
+
+async function saveClient(){
+  const name = $('newClientName').value.trim();
+
+  if (!name) {
+    toast('Informe o nome / razão social do cliente.');
+    return;
+  }
+
+  const payload = {
+    seller: $('seller').value.trim(),
+    client: {
+      name,
+      doc: $('newClientDoc').value.trim(),
+      ie: $('newClientIe').value.trim(),
+      contact: $('newClientContact').value.trim(),
+      whatsapp: $('newClientWhatsapp').value.trim(),
+      email: $('newClientEmail').value.trim(),
+      address: $('newClientAddress').value.trim(),
+      number: $('newClientNumber').value.trim(),
+      district: $('newClientDistrict').value.trim(),
+      city: $('newClientCity').value.trim(),
+      uf: $('newClientUf').value.trim(),
+      cep: $('newClientCep').value.trim(),
+      creditLimit: Number($('newClientCredit').value || 0),
+      defaultTerm: $('newClientTerm').value.trim(),
+      notes: $('newClientNotes').value.trim()
+    }
+  };
+
+  $('saveClientBtn').disabled = true;
+  $('saveClientBtn').textContent = 'Salvando...';
+
+  try {
+    const client = await submitRegistration(
+      'client',
+      payload,
+      'clientStatus'
+    );
+
+    $('clientName').value = client.name || name;
+    $('clientDoc').value = client.doc || payload.client.doc;
+    $('clientWhatsapp').value =
+      client.whatsapp || payload.client.whatsapp;
+
+    closeClientModal();
+
+    toast(
+      client.existing
+        ? 'Esse cliente já estava cadastrado e foi selecionado.'
+        : `Cliente ${client.id} cadastrado com sucesso.`
+    );
+
+  } catch(err) {
+    toast(err.message || String(err));
+
+  } finally {
+    $('saveClientBtn').disabled = false;
+    $('saveClientBtn').textContent = 'Salvar cliente';
+  }
 }
 
 async function finishOrder(){
