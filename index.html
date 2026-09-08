@@ -229,7 +229,9 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbwsUj2LThlCfW-jsykLjCK89VAQFCFNeegbfHxFNRHIl6wfKRBDucBYYuHg0-VKKGDHzQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwqy4Fdu3WZy3pP1rRve1lHmTl_xulY9yoJdFRcG_RpP60UC-FnyTHHFHWv4ZGSHqtv-A/exec';
+const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1NEUqOmKlhiH-q9TmE-McRD2QLAMFKLBiV6i8MFXb0Hw/edit?gid=1595423847#gid=1595423847';
+const SPREADSHEET_ID = SPREADSHEET_URL.match(/\/d\/([a-zA-Z0-9-_]+)/)[1];
 
 let accessPin = sessionStorage.getItem('campello_pin') || '';
 let selected = null;
@@ -284,6 +286,7 @@ function apiGet(action, params = {}, timeout = 12000){
     const query = new URLSearchParams({
       action,
       pin: accessPin,
+      sheetId: SPREADSHEET_ID,
       callback,
       _: String(Date.now()),
       ...params
@@ -512,6 +515,7 @@ function submitOrder(payload){
 
     payload.requestId = requestId;
     payload.pin = accessPin;
+    payload.sheetId = SPREADSHEET_ID;
 
     const form = document.createElement('form');
     form.method = 'POST';
