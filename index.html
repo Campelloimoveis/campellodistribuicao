@@ -25,8 +25,8 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:
 .card-header{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}.card-header h2{margin:0;color:var(--navy);font-size:16px}
 .card-body{padding:18px}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.spacer{height:14px}
 label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px}
-input,select{width:100%;border:1px solid #cfd6de;border-radius:10px;padding:12px 13px;font-size:15px;background:#fff;outline:none}
-input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26,51,.08)}
+input,select,textarea{width:100%;border:1px solid #cfd6de;border-radius:10px;padding:12px 13px;font-size:15px;background:#fff;outline:none;font-family:Arial,Helvetica,sans-serif}
+input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26,51,.08)}
 .search-wrap{position:relative}.search-results{position:absolute;left:0;right:0;top:100%;margin-top:6px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.12);max-height:330px;overflow:auto;display:none;z-index:40}
 .result{padding:12px;border-bottom:1px solid #edf0f3;cursor:pointer}.result:last-child{border-bottom:0}.result:hover{background:#f6f8fa}
 .result strong{display:block;color:var(--navy)}.result small{color:var(--muted)}
@@ -254,6 +254,11 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
   }
 }
 
+
+.doc-fields textarea{min-height:72px;resize:vertical}
+.doc-fields .row{margin-bottom:12px}
+.doc-edit-note{font-size:12px;color:var(--muted);margin-top:8px}
+
 </style>
 </head>
 <body>
@@ -337,6 +342,17 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
         <div class="stock" id="selectedStock"></div>
       </div>
     </div>
+    <div class="spacer"></div>
+    <div class="row">
+      <div>
+        <label>Descrição no Pedido de Venda</label>
+        <input id="documentProductName" placeholder="Descrição que aparecerá no documento">
+      </div>
+      <div>
+        <label>Referência no documento</label>
+        <input id="documentProductRef" placeholder="Referência / código">
+      </div>
+    </div>
     <div class="product-controls">
       <div><label>Quantidade</label><input id="qty" type="number" min="1" step="1" value="1"></div>
       <div><label>Preço de venda</label><input id="price" type="number" min="0" step="0.01"></div>
@@ -355,7 +371,7 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
   <div class="small-grid">
     <div>
       <label>Forma de pagamento</label>
-      <select id="payment">
+      <select id="payment" onchange="updatePaymentCondition()">
         <option>Pix</option><option>Dinheiro</option><option>Boleto</option>
         <option>Cartão</option><option>Transferência</option><option>Prazo</option>
       </select>
@@ -367,6 +383,63 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
   <label>Observação</label>
   <input id="notes" placeholder="Ex.: entregar amanhã pela manhã">
 </div>
+</section>
+
+<div class="spacer"></div>
+
+<section class="card doc-fields">
+  <div class="card-header"><h2>4. Dados do Pedido de Venda</h2></div>
+  <div class="card-body">
+    <div class="row">
+      <div>
+        <label>Representante</label>
+        <input id="docRepresentative" value="Gladston Campello">
+      </div>
+      <div>
+        <label>Telefone</label>
+        <input id="docPhone" value="(31) 99745-7406">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>E-mail</label>
+        <input id="docEmail" value="gladston.campello@gmail.com">
+      </div>
+      <div>
+        <label>Validade comercial</label>
+        <input id="docValidity" value="10 dias corridos">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Data de emissão</label>
+        <input id="docIssueDate" type="date">
+      </div>
+      <div>
+        <label>Prazo de entrega</label>
+        <input id="docDelivery" value="7 dias úteis após a confirmação do pedido">
+      </div>
+    </div>
+
+    <label>Condição comercial de pagamento</label>
+    <textarea id="docPaymentCondition">No recebimento, à vista ou no cartão com taxas por conta do comprador.</textarea>
+
+    <div class="spacer"></div>
+
+    <label>Garantia</label>
+    <textarea id="docWarranty">Garantia de fábrica conforme descrita em catálogo, observando os termos aplicáveis a defeitos de fabricação.</textarea>
+
+    <div class="spacer"></div>
+
+    <label>Logística / Entrega</label>
+    <textarea id="docLogistics">Entrega realizada de forma direta pelo representante comercial no endereço combinado.</textarea>
+
+    <div class="doc-edit-note">
+      Esses textos são preenchidos com o padrão da gestão, mas podem ser alterados para refletir exatamente o orçamento aprovado pelo cliente.
+    </div>
+  </div>
 </section>
 
 </div>
@@ -459,7 +532,7 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
     <div class="order-doc-topline">
       <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap">
         <div class="order-doc-kicker">PEDIDO DE VENDA | DOCUMENTO COMERCIAL</div>
-        <div class="order-doc-contact">Gladston Campello - (31) 99745-7406</div>
+        <div class="order-doc-contact"><span id="mirrorRepresentativeTop"></span> - <span id="mirrorPhoneTop"></span></div>
       </div>
     </div>
 
@@ -470,16 +543,16 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
 
     <div class="order-doc-info">
       <div class="order-doc-info-block">
-        <b>Representante Comercial:</b> Gladston Campello<br>
-        <b>Telefone:</b> (31) 99745-7406<br>
-        <b>E-mail:</b> gladston.campello@gmail.com
+        <b>Representante Comercial:</b> <span id="mirrorRepresentative"></span><br>
+        <b>Telefone:</b> <span id="mirrorPhone"></span><br>
+        <b>E-mail:</b> <span id="mirrorEmail"></span>
       </div>
 
       <div class="order-doc-info-block">
         <b>Pedido:</b> <span id="mirrorCode"></span><br>
         <b>Cliente:</b> <span id="mirrorClient"></span><br>
         <b>Data de Emissão:</b> <span id="mirrorDate"></span><br>
-        <b>Validade Comercial:</b> 10 dias corridos
+        <b>Validade Comercial:</b> <span id="mirrorValidity"></span>
       </div>
     </div>
 
@@ -526,9 +599,10 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
       <h3>Condições de Fornecimento</h3>
 
       <div class="order-doc-terms">
-        • <b>Prazo de Entrega:</b> Estritamente 7 dias úteis após a confirmação do pedido.<br>
-        • <b>Forma de Pagamento:</b> No recebimento, à vista ou no cartão com taxas por conta do comprador.<br>
-        • <b>Garantia:</b> Garantia de fábrica conforme descrita em catálogo, observando os termos aplicáveis a defeitos de fabricação.<br>
+        • <b>Prazo de Entrega:</b> <span id="mirrorDelivery"></span><br>
+        • <b>Forma de Pagamento:</b> <span id="mirrorPaymentCondition"></span><br>
+        • <b>Garantia:</b> <span id="mirrorWarranty"></span><br>
+        • <b>Logística:</b> <span id="mirrorLogistics"></span><br>
         • <b>Observação do Pedido:</b> <span id="mirrorNotes"></span>
       </div>
     </div>
@@ -536,7 +610,7 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
     <div class="order-doc-signatures">
       <div class="order-doc-signature">
         <div class="order-doc-signature-line"></div>
-        <b>Gladston Campello</b><br>
+        <b id="mirrorRepresentativeSignature"></b><br>
         Representante Comercial
       </div>
 
@@ -550,7 +624,7 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
     <div class="order-doc-footer">
       <div>Validade comercial: 10 dias a partir da emissão.</div>
       <div>Campello Distribuição</div>
-      <div>Contato: gladston.campello@gmail.com</div>
+      <div>Contato: <span id="mirrorFooterEmail"></span></div>
     </div>
 
     <div class="modal-actions">
@@ -852,6 +926,8 @@ function chooseProduct(p){
   $('selectedStock').textContent = `${p.available} ${p.unit || ''}`;
   $('price').value = Number(p.price || 0).toFixed(2);
   $('qty').value = 1;
+  $('documentProductName').value = p.name || '';
+  $('documentProductRef').value = p.sku || '';
   $('selectedProduct').style.display = 'block';
   $('searchResults').style.display = 'none';
   $('productSearch').value = p.name;
@@ -875,13 +951,25 @@ function addSelected(){
     );
   }
 
+  const documentName =
+    $('documentProductName').value.trim() ||
+    selected.name;
+
+  const documentRef =
+    $('documentProductRef').value.trim() ||
+    selected.sku;
+
   if (existing) {
     existing.qty += qty;
     existing.price = price;
+    existing.documentName = documentName;
+    existing.documentRef = documentRef;
   } else {
     cart.push({
       sku: selected.sku,
       name: selected.name,
+      documentName,
+      documentRef,
       unit: selected.unit,
       qty,
       price,
@@ -926,9 +1014,9 @@ function renderCart(){
     box.innerHTML = cart.map((i,idx) => `
       <div class="cart-item">
         <div>
-          <strong>${esc(i.name)}</strong>
+          <strong>${esc(i.documentName || i.name)}</strong>
           <div class="meta">
-            SKU ${esc(i.sku)} · ${i.qty} ${esc(i.unit || '')} × ${money(i.price)}
+            Ref. ${esc(i.documentRef || i.sku)} · SKU ${esc(i.sku)} · ${i.qty} ${esc(i.unit || '')} × ${money(i.price)}
           </div>
         </div>
         <div class="price">
@@ -1193,6 +1281,83 @@ async function saveClient(){
   }
 }
 
+
+
+function updatePaymentCondition(){
+  const forma = $('payment').value;
+
+  const condicoes = {
+    'Pix':
+      'No recebimento, à vista via PIX.',
+
+    'Dinheiro':
+      'No recebimento, à vista em dinheiro.',
+
+    'Boleto':
+      'Pagamento via boleto conforme o prazo acordado com o cliente.',
+
+    'Cartão':
+      'No recebimento, no cartão, com as taxas por conta do comprador.',
+
+    'Transferência':
+      'No recebimento, à vista via transferência bancária.',
+
+    'Prazo':
+      'Pagamento a prazo conforme a condição negociada com o cliente.'
+  };
+
+  $('docPaymentCondition').value =
+    condicoes[forma] ||
+    'Conforme condição comercial acordada com o cliente.';
+}
+
+
+function getDocumentConfig(){
+  return {
+    representative:
+      $('docRepresentative').value.trim() ||
+      'Gladston Campello',
+
+    phone:
+      $('docPhone').value.trim(),
+
+    email:
+      $('docEmail').value.trim(),
+
+    validity:
+      $('docValidity').value.trim(),
+
+    issueDate:
+      $('docIssueDate').value,
+
+    delivery:
+      $('docDelivery').value.trim(),
+
+    paymentCondition:
+      $('docPaymentCondition').value.trim(),
+
+    warranty:
+      $('docWarranty').value.trim(),
+
+    logistics:
+      $('docLogistics').value.trim()
+  };
+}
+
+
+function formatDocumentDate(value, fallback){
+  if (!value) return fallback || '-';
+
+  const parts = value.split('-');
+
+  if (parts.length !== 3) {
+    return value;
+  }
+
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+
 async function finishOrder(){
   const clientName = $('clientName').value.trim();
 
@@ -1200,6 +1365,8 @@ async function finishOrder(){
   if (!cart.length) return toast('Adicione pelo menos um produto.');
 
   const t = totals();
+  const documentConfig = getDocumentConfig();
+  const cartSnapshot = cart.map(item => ({...item}));
 
   const payload = {
     client: {
@@ -1210,7 +1377,7 @@ async function finishOrder(){
     },
     seller: $('seller').value.trim(),
     payment: $('payment').value,
-    condition: '',
+    condition: documentConfig.paymentCondition,
     freight: t.freight,
     discount: t.discount,
     notes: $('notes').value.trim(),
@@ -1226,6 +1393,26 @@ async function finishOrder(){
 
   try {
     savedOrder = await submitOrder(payload);
+
+    savedOrder.documentConfig = documentConfig;
+
+    savedOrder.items = (savedOrder.items || []).map((item, index) => {
+      const original =
+        cartSnapshot[index] ||
+        cartSnapshot.find(x => x.sku === item.sku) ||
+        {};
+
+      return {
+        ...item,
+        documentName:
+          original.documentName ||
+          item.name,
+        documentRef:
+          original.documentRef ||
+          item.sku
+      };
+    });
+
     showMirror(savedOrder);
   } catch(err) {
     toast(err.message || String(err));
@@ -1236,25 +1423,110 @@ async function finishOrder(){
 }
 
 function showMirror(o){
+  const doc = o.documentConfig || {};
+
   $('mirrorCode').textContent = o.orderId || '-';
-  $('mirrorDate').textContent = o.date || '-';
-  $('mirrorClient').textContent = o.clientName || '-';
-  $('mirrorNotes').textContent = o.notes || 'Sem observações adicionais.';
 
-  $('mirrorItems').innerHTML = (o.items || []).map(i => `
-    <tr>
-      <td>${esc(String(i.name || '').toUpperCase())}</td>
-      <td>${esc(i.sku || '')}</td>
-      <td class="center">${Number(i.qty || 0)}</td>
-      <td class="num">${money(i.price)}</td>
-      <td class="num"><strong>${money(i.total)}</strong></td>
-    </tr>
-  `).join('');
+  $('mirrorDate').textContent =
+    formatDocumentDate(
+      doc.issueDate,
+      o.date || '-'
+    );
 
-  $('mirrorSubtotal').textContent = money(o.subtotal);
-  $('mirrorFreight').textContent = money(o.freight);
-  $('mirrorDiscount').textContent = money(o.discount);
-  $('mirrorTotal').textContent = money(o.total);
+  $('mirrorClient').textContent =
+    o.clientName || '-';
+
+  $('mirrorNotes').textContent =
+    o.notes ||
+    'Sem observações adicionais.';
+
+  $('mirrorRepresentative').textContent =
+    doc.representative ||
+    o.seller ||
+    'Gladston Campello';
+
+  $('mirrorRepresentativeTop').textContent =
+    doc.representative ||
+    o.seller ||
+    'Gladston Campello';
+
+  $('mirrorRepresentativeSignature').textContent =
+    doc.representative ||
+    o.seller ||
+    'Gladston Campello';
+
+  $('mirrorPhone').textContent =
+    doc.phone || '-';
+
+  $('mirrorPhoneTop').textContent =
+    doc.phone || '-';
+
+  $('mirrorEmail').textContent =
+    doc.email || '-';
+
+  $('mirrorFooterEmail').textContent =
+    doc.email || '-';
+
+  $('mirrorValidity').textContent =
+    doc.validity || '-';
+
+  $('mirrorDelivery').textContent =
+    doc.delivery || '-';
+
+  $('mirrorPaymentCondition').textContent =
+    doc.paymentCondition ||
+    o.condition ||
+    o.payment ||
+    '-';
+
+  $('mirrorWarranty').textContent =
+    doc.warranty || '-';
+
+  $('mirrorLogistics').textContent =
+    doc.logistics || '-';
+
+  $('mirrorItems').innerHTML =
+    (o.items || []).map(i => `
+      <tr>
+        <td>${esc(
+          String(
+            i.documentName ||
+            i.name ||
+            ''
+          ).toUpperCase()
+        )}</td>
+
+        <td>${esc(
+          i.documentRef ||
+          i.sku ||
+          ''
+        )}</td>
+
+        <td class="center">
+          ${Number(i.qty || 0)}
+        </td>
+
+        <td class="num">
+          ${money(i.price)}
+        </td>
+
+        <td class="num">
+          <strong>${money(i.total)}</strong>
+        </td>
+      </tr>
+    `).join('');
+
+  $('mirrorSubtotal').textContent =
+    money(o.subtotal);
+
+  $('mirrorFreight').textContent =
+    money(o.freight);
+
+  $('mirrorDiscount').textContent =
+    money(o.discount);
+
+  $('mirrorTotal').textContent =
+    money(o.total);
 
   $('mirrorFreightRow').style.display =
     Number(o.freight || 0) === 0
@@ -1277,7 +1549,7 @@ function shareWhatsapp(){
   if (!savedOrder) return;
 
   const lines = savedOrder.items
-    .map(i => `${i.qty}x ${i.name} - ${money(i.total)}`)
+    .map(i => `${i.qty}x ${i.documentName || i.name} - ${money(i.total)}`)
     .join('\n');
 
   const text =
@@ -1307,10 +1579,28 @@ function clearOrder(){
   $('clientName').value = '';
   $('clientWhatsapp').value = '';
   $('clientDoc').value = '';
+  $('payment').value = 'Pix';
   $('freight').value = '0';
   $('discount').value = '0';
   $('notes').value = '';
   $('productSearch').value = '';
+
+  $('docRepresentative').value = 'Gladston Campello';
+  $('docPhone').value = '(31) 99745-7406';
+  $('docEmail').value = 'gladston.campello@gmail.com';
+  $('docValidity').value = '10 dias corridos';
+  $('docDelivery').value = '7 dias úteis após a confirmação do pedido';
+  updatePaymentCondition();
+  $('docWarranty').value =
+    'Garantia de fábrica conforme descrita em catálogo, observando os termos aplicáveis a defeitos de fabricação.';
+  $('docLogistics').value =
+    'Entrega realizada de forma direta pelo representante comercial no endereço combinado.';
+
+  const now = new Date();
+  $('docIssueDate').value =
+    now.getFullYear() + '-' +
+    String(now.getMonth()+1).padStart(2,'0') + '-' +
+    String(now.getDate()).padStart(2,'0');
   $('selectedProduct').style.display = 'none';
 
   renderCart();
@@ -1341,6 +1631,13 @@ document.addEventListener('click', e => {
   }
 });
 
+const docToday = new Date();
+$('docIssueDate').value =
+  docToday.getFullYear() + '-' +
+  String(docToday.getMonth()+1).padStart(2,'0') + '-' +
+  String(docToday.getDate()).padStart(2,'0');
+
+updatePaymentCondition();
 renderCart();
 $('gate').style.display = 'none';
 </script>
