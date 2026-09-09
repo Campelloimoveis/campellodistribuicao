@@ -173,12 +173,12 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
   </div>
 
   <div class="actions">
-    <button id="finishBtn" class="btn btn-red" onclick="toast('A gravação da entrada será conectada na próxima etapa.')">Finalizar entrada</button>
+    <button id="finishBtn" class="btn btn-red" onclick="finishPurchase()">Finalizar entrada</button>
     <button class="btn btn-light" onclick="clearPurchase()">Limpar</button>
   </div>
 
   <div class="helper" style="margin-top:12px">
-    Ao finalizar, cada item será registrado como <strong>Entrada</strong> em 05_MOV_ESTOQUE.
+    Ao finalizar, cada item será registrado como <strong>Entrada</strong> em 05_MOV_ESTOQUE e o estoque do produto será atualizado pelas fórmulas da planilha.
   </div>
 </div>
 </aside>
@@ -730,8 +730,129 @@ function renderCart(){
   $('total').textContent = money(t.total);
 }
 
-function finishPurchase(){
-  toast('A gravação da entrada será conectada na próxima etapa.');
+function submitPurchase(payload){
+  return new Promise((resolve, reject) => {
+    const requestId = uniqueId();
+
+    payload.kind = 'purchase';
+    payload.requestId = requestId;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = API_URL;
+    form.target = 'apiPostFrame';
+    form.style.display = 'none';
+
+    const req = document.createElement('input');
+    req.type = 'hidden';
+    req.name = 'requestId';
+    req.value = requestId;
+
+    const data = document.createElement('input');
+    data.type = 'hidden';
+    data.name = 'payload';
+    data.value = JSON.stringify(payload);
+
+    form.appendChild(req);
+    form.appendChild(data);
+    document.body.appendChild(form);
+    form.submit();
+
+    setTimeout(() => form.remove(), 1500);
+
+    const started = Date.now();
+
+    const poll = async () => {
+      if (Date.now() - started > 25000) {
+        reject(
+          new Error(
+            'A entrada pode ter sido gravada, mas a confirmação demorou. Confira 05_MOV_ESTOQUE antes de tentar novamente.'
+          )
+        );
+        return;
+      }
+
+      try {
+        const status = await apiGet(
+          'purchaseStatus',
+          {requestId},
+          8000
+        );
+
+        if (status.pending) {
+          setTimeout(poll, 700);
+          return;
+        }
+
+        if (!status.ok) {
+          reject(
+            new Error(
+              status.erro ||
+              status.error ||
+              'Não foi possível gravar a entrada.'
+            )
+          );
+          return;
+        }
+
+        resolve(status.result);
+
+      } catch(err) {
+        setTimeout(poll, 900);
+      }
+    };
+
+    setTimeout(poll, 700);
+  });
+}
+
+
+async function finishPurchase(){
+  if (!selectedSupplierData) {
+    toast('Selecione o fornecedor.');
+    return;
+  }
+
+  if (!cart.length) {
+    toast('Adicione pelo menos um produto.');
+    return;
+  }
+
+  const payload = {
+    supplierId: selectedSupplierData.id,
+    date: $('purchaseDate').value,
+    document: $('documentNumber').value.trim(),
+    responsible: $('responsible').value.trim(),
+    freight: Number($('freight').value || 0),
+    notes: $('notes').value.trim(),
+    updateCost: $('updateCost').checked,
+    items: cart.map(i => ({
+      sku: i.sku,
+      qty: Number(i.qty),
+      unitCost: Number(i.unitCost)
+    }))
+  };
+
+  const btn = $('finishBtn');
+  btn.disabled = true;
+  btn.textContent = 'Gravando entrada...';
+
+  try {
+    savedPurchase = await submitPurchase(payload);
+
+    showMirror(savedPurchase);
+
+    toast(
+      `Entrada ${savedPurchase.purchaseId} gravada com sucesso.`
+    );
+
+  } catch(err) {
+    toast(err.message || String(err));
+
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Finalizar entrada';
+  }
 }
 
 
