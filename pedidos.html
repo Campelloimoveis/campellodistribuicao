@@ -3,23 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Campello Distribuição — Financeiro</title>
+<title>Campello Distribuição — Pedidos e Faturamento</title>
 
 <style>
 :root{
   --navy:#001a33;
-  --navy2:#153a5b;
+  --navy2:#173d5e;
   --red:#d7262e;
   --green:#198754;
   --orange:#dd6b20;
+  --blue:#24658f;
   --bg:#f3f6f9;
   --white:#fff;
   --text:#243746;
   --muted:#6f7f8f;
   --line:#dbe3ea;
   --danger:#b42318;
-  --warning:#9a6700;
-  --success:#147a42;
 }
 *{box-sizing:border-box}
 body{
@@ -38,18 +37,18 @@ button{cursor:pointer}
   z-index:50;
 }
 .topbar-inner{
-  width:min(1220px,100%);
-  margin:auto;
+  width:min(1240px,100%);
   min-height:78px;
+  margin:auto;
   padding:10px 20px;
   display:flex;
   align-items:center;
-  gap:18px;
+  gap:16px;
 }
 .brand{
   display:flex;
   align-items:center;
-  gap:11px;
+  gap:10px;
   min-width:220px;
 }
 .brand img{
@@ -70,17 +69,18 @@ button{cursor:pointer}
 }
 .main-nav{
   display:flex;
-  gap:5px;
+  gap:4px;
   margin-left:auto;
   align-items:center;
 }
 .main-nav a{
   text-decoration:none;
   color:var(--navy);
-  font-size:13px;
   font-weight:700;
-  padding:9px 11px;
+  font-size:12px;
+  padding:9px 10px;
   border-radius:9px;
+  white-space:nowrap;
 }
 .main-nav a:hover{background:#eef2f6}
 .main-nav a.active{
@@ -88,14 +88,13 @@ button{cursor:pointer}
   color:#fff;
 }
 .connection{
-  margin-left:4px;
   color:var(--green);
-  border:1px solid #c9e6d3;
   background:#ecf8f0;
-  border-radius:999px;
+  border:1px solid #c9e6d3;
   padding:7px 10px;
-  font-weight:700;
-  font-size:11px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:800;
   white-space:nowrap;
 }
 .hero{
@@ -113,79 +112,92 @@ button{cursor:pointer}
 }
 .hero p{
   margin:8px 0 0;
-  color:#d7e1ea;
-  max-width:740px;
+  color:#dbe5ee;
   font-size:14px;
   line-height:1.5;
+  max-width:820px;
 }
+.flow{
+  margin-top:15px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex-wrap:wrap;
+}
+.flow span{
+  background:rgba(255,255,255,.11);
+  border:1px solid rgba(255,255,255,.17);
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:11px;
+  font-weight:700;
+}
+.flow b{color:#a9bdd0}
 .container{
   width:min(1180px,calc(100% - 28px));
-  margin:22px auto 50px;
+  margin:20px auto 50px;
 }
 .summary-grid{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:12px;
+  gap:11px;
 }
 .summary{
   background:#fff;
   border:1px solid var(--line);
-  border-radius:15px;
-  padding:17px;
-  min-height:112px;
+  border-radius:14px;
+  padding:16px;
 }
-.summary .label{
+.summary small{
+  display:block;
   color:var(--muted);
-  font-size:11px;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.04em;
-}
-.summary .value{
-  margin-top:8px;
-  color:var(--navy);
-  font-size:24px;
+  font-size:10px;
   font-weight:800;
+  text-transform:uppercase;
 }
-.summary .meta{
+.summary strong{
+  display:block;
+  color:var(--navy);
+  font-size:25px;
   margin-top:7px;
-  color:var(--muted);
-  font-size:11px;
 }
-.summary.danger .value{color:var(--danger)}
-.summary.success .value{color:var(--success)}
+.summary .sub{
+  color:var(--muted);
+  font-size:10px;
+  margin-top:4px;
+}
 .card{
-  margin-top:16px;
+  margin-top:15px;
   background:#fff;
   border:1px solid var(--line);
-  border-radius:16px;
+  border-radius:15px;
   overflow:hidden;
 }
 .card-head{
-  padding:16px 18px;
+  padding:15px 17px;
   border-bottom:1px solid var(--line);
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:14px;
+  gap:12px;
 }
 .card-head h2{
   margin:0;
   color:var(--navy);
   font-size:17px;
 }
-.card-body{padding:16px 18px}
+.card-body{padding:15px 17px}
 .filters{
   display:grid;
-  grid-template-columns:2fr repeat(3,minmax(120px,.7fr)) auto;
+  grid-template-columns:2fr 1fr auto;
   gap:9px;
   align-items:end;
 }
 label{
   display:block;
-  color:#536575;
-  font-size:11px;
-  font-weight:700;
+  font-size:10px;
+  color:#526474;
+  font-weight:800;
   margin-bottom:5px;
 }
 input,select,textarea{
@@ -211,14 +223,16 @@ input:focus,select:focus,textarea:focus{
   border-radius:10px;
   min-height:42px;
   padding:0 14px;
+  font-size:11px;
   font-weight:800;
-  font-size:12px;
 }
 .btn-primary{background:var(--navy);color:#fff}
 .btn-green{background:var(--green);color:#fff}
-.btn-light{background:#edf2f6;color:var(--navy)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-orange{background:var(--orange);color:#fff}
 .btn-red{background:var(--red);color:#fff}
-.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-light{background:#edf2f6;color:var(--navy)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
 .table-wrap{
   overflow:auto;
   border:1px solid var(--line);
@@ -227,159 +241,147 @@ input:focus,select:focus,textarea:focus{
 table{
   width:100%;
   border-collapse:collapse;
-  min-width:1050px;
+  min-width:1080px;
 }
 th,td{
   padding:11px 10px;
-  border-bottom:1px solid #e7edf2;
+  border-bottom:1px solid #e8edf2;
   text-align:left;
-  font-size:12px;
+  font-size:11px;
   vertical-align:middle;
 }
 th{
   background:#f7f9fb;
-  color:#526474;
-  font-size:10px;
+  color:#536575;
+  font-size:9px;
   text-transform:uppercase;
-  letter-spacing:.035em;
-  position:sticky;
-  top:0;
+  letter-spacing:.04em;
 }
 td.money,th.money{text-align:right}
-.title-main{
+.main-text{
   color:var(--navy);
   font-weight:800;
 }
-.title-meta{
+.meta{
   color:var(--muted);
-  font-size:10px;
+  font-size:9px;
   margin-top:3px;
 }
 .badge{
   display:inline-flex;
-  align-items:center;
   border-radius:999px;
   padding:5px 8px;
-  font-size:10px;
-  font-weight:800;
+  font-size:9px;
+  font-weight:900;
   white-space:nowrap;
 }
-.badge-receber{background:#e9f7ef;color:#147a42}
-.badge-pagar{background:#fff0ee;color:#b42318}
-.badge-open{background:#edf2f6;color:#536575}
-.badge-overdue{background:#fff1dd;color:#9a6700}
-.badge-paid{background:#e9f7ef;color:#147a42}
+.status-orcamento{background:#f0f3f6;color:#536575}
+.status-aberto{background:#e7f1fa;color:#24658f}
+.status-separacao{background:#fff3dd;color:#9a6700}
+.status-faturado{background:#e8f7ef;color:#147a42}
+.status-entregue{background:#e7f6f6;color:#087f8c}
+.status-cancelado{background:#fff0ee;color:#b42318}
+.finance-ok{background:#e8f7ef;color:#147a42}
+.finance-no{background:#f0f3f6;color:#6c7c89}
 .mobile-list{display:none}
-.mobile-title{
-  background:#fff;
+.mobile-order{
   border:1px solid var(--line);
   border-radius:14px;
+  background:#fff;
   padding:14px;
   margin-bottom:10px;
 }
-.mobile-title-head{
+.mobile-head{
   display:flex;
   justify-content:space-between;
+  gap:8px;
   align-items:flex-start;
-  gap:10px;
 }
-.mobile-title h3{
-  margin:8px 0 2px;
+.mobile-order h3{
+  margin:10px 0 3px;
   color:var(--navy);
   font-size:15px;
 }
-.mobile-title .partner{
-  color:#485c6c;
+.mobile-order .client{
+  color:#4d6170;
   font-size:12px;
 }
-.mobile-money{
+.mobile-data{
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:7px;
   margin:12px 0;
 }
-.mobile-money div{
+.mobile-data div{
   background:#f7f9fb;
   border-radius:9px;
   padding:8px;
 }
-.mobile-money small{
+.mobile-data small{
   display:block;
   color:var(--muted);
-  font-size:9px;
+  font-size:8px;
+  text-transform:uppercase;
   margin-bottom:3px;
 }
-.mobile-money strong{
+.mobile-data strong{
   color:var(--navy);
-  font-size:12px;
+  font-size:11px;
 }
 .mobile-footer{
   display:flex;
   justify-content:space-between;
-  align-items:center;
   gap:8px;
+  align-items:center;
   flex-wrap:wrap;
 }
-.empty{
-  padding:42px 20px;
+.loading,.empty{
+  padding:38px 20px;
   text-align:center;
   color:var(--muted);
+  font-size:12px;
 }
 .helper{
   color:var(--muted);
-  font-size:11px;
+  font-size:10px;
   line-height:1.45;
-}
-.loading{
-  padding:26px;
-  text-align:center;
-  color:var(--muted);
 }
 .modal{
   display:none;
   position:fixed;
   inset:0;
-  background:rgba(0,20,38,.58);
   z-index:100;
+  background:rgba(0,20,38,.6);
   padding:18px;
   align-items:center;
   justify-content:center;
 }
 .modal-card{
-  background:#fff;
-  border-radius:16px;
-  width:min(720px,100%);
-  max-height:92vh;
+  width:min(860px,100%);
+  max-height:93vh;
   overflow:auto;
-  box-shadow:0 22px 60px rgba(0,0,0,.25);
+  background:#fff;
+  border-radius:17px;
+  box-shadow:0 20px 60px rgba(0,0,0,.27);
 }
 .modal-head{
-  padding:17px 18px;
+  padding:16px 18px;
   border-bottom:1px solid var(--line);
   display:flex;
   justify-content:space-between;
   align-items:center;
-  gap:12px;
+  gap:10px;
 }
 .modal-head h2{
   margin:0;
   color:var(--navy);
   font-size:18px;
 }
-.modal-body{padding:18px}
-.modal-actions{
-  padding:14px 18px;
-  border-top:1px solid var(--line);
-  display:flex;
-  justify-content:flex-end;
-  gap:8px;
-  flex-wrap:wrap;
-}
+.modal-body{padding:17px 18px}
 .detail-grid{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(4,1fr);
   gap:8px;
-  margin-bottom:15px;
 }
 .detail{
   background:#f7f9fb;
@@ -389,72 +391,95 @@ td.money,th.money{text-align:right}
 .detail small{
   display:block;
   color:var(--muted);
-  font-size:9px;
+  font-size:8px;
   text-transform:uppercase;
   margin-bottom:4px;
 }
 .detail strong{
   color:var(--navy);
-  font-size:12px;
-}
-.form-grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
-}
-.history{
-  margin-top:18px;
-  border-top:1px solid var(--line);
-  padding-top:14px;
-}
-.history h3{
-  margin:0 0 9px;
-  color:var(--navy);
-  font-size:14px;
-}
-.history-item{
-  border:1px solid var(--line);
-  border-radius:10px;
-  padding:10px;
-  margin-bottom:7px;
   font-size:11px;
 }
-.history-item strong{color:var(--navy)}
-.history-meta{
-  color:var(--muted);
-  margin-top:4px;
+.section-title{
+  margin:18px 0 9px;
+  color:var(--navy);
+  font-size:13px;
+}
+.items-table{
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.items-table table{min-width:620px}
+.finance-box{
+  margin-top:16px;
+  border:1px solid #d9e4ec;
+  border-radius:12px;
+  padding:13px;
+  background:#f9fbfc;
+}
+.finance-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:9px;
+}
+.finance-status{
+  margin-top:9px;
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.warning{
+  margin-top:10px;
+  background:#fff6e8;
+  border:1px solid #f0d6a7;
+  color:#79500b;
+  border-radius:9px;
+  padding:9px 10px;
+  font-size:10px;
+  line-height:1.45;
+}
+.modal-actions{
+  padding:14px 18px;
+  border-top:1px solid var(--line);
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+  flex-wrap:wrap;
 }
 .toast{
+  display:none;
   position:fixed;
   left:50%;
-  bottom:22px;
   transform:translateX(-50%);
+  bottom:22px;
+  z-index:200;
   background:#142c41;
   color:#fff;
   padding:11px 15px;
   border-radius:10px;
-  font-size:12px;
-  z-index:200;
-  display:none;
-  max-width:min(520px,calc(100% - 24px));
+  font-size:11px;
+  max-width:min(560px,calc(100% - 24px));
   text-align:center;
 }
 @media(max-width:900px){
   .summary-grid{grid-template-columns:repeat(2,1fr)}
-  .filters{grid-template-columns:1fr 1fr}
-  .filters .search-field{grid-column:1/-1}
-  .filters .refresh-field{grid-column:1/-1}
-  .filters .refresh-field .btn{width:100%}
   .connection{display:none}
-  .brand{min-width:unset}
+  .filters{grid-template-columns:1fr 1fr}
+  .filters .search{grid-column:1/-1}
+  .filters .refresh{grid-column:1/-1}
+  .filters .refresh .btn{width:100%}
+  .detail-grid{grid-template-columns:repeat(2,1fr)}
+  .finance-grid{grid-template-columns:repeat(2,1fr)}
 }
-@media(max-width:650px){
+@media(max-width:680px){
   .topbar-inner{
-    padding:8px 11px;
     min-height:68px;
+    padding:8px 11px;
     flex-wrap:wrap;
     gap:7px;
   }
+  .brand{min-width:unset}
   .brand img{width:50px;height:44px}
   .brand strong{font-size:14px}
   .main-nav{
@@ -466,46 +491,42 @@ td.money,th.money{text-align:right}
   }
   .main-nav a{
     flex:0 0 auto;
-    padding:8px 9px;
-    font-size:11px;
+    font-size:10px;
+    padding:8px;
   }
-  .hero{padding:24px 15px}
-  .hero h1{font-size:24px}
-  .container{
-    width:calc(100% - 20px);
-    margin-top:14px;
-  }
+  .hero{padding:23px 15px}
+  .hero h1{font-size:23px}
+  .flow{gap:5px}
+  .flow span{font-size:9px;padding:5px 7px}
+  .container{width:calc(100% - 20px);margin-top:13px}
   .summary-grid{gap:8px}
-  .summary{
-    padding:13px;
-    min-height:96px;
-  }
-  .summary .value{font-size:19px}
-  .card-head,.card-body{padding:13px}
+  .summary{padding:13px}
+  .summary strong{font-size:20px}
   .filters{grid-template-columns:1fr}
-  .filters .search-field,.filters .refresh-field{grid-column:auto}
-  .desktop-table{display:none}
+  .filters .search,.filters .refresh{grid-column:auto}
+  .desktop-table{display:none!important}
   .mobile-list{display:block}
-  .detail-grid{grid-template-columns:1fr 1fr}
-  .form-grid{grid-template-columns:1fr}
   .modal{
     padding:0;
     align-items:flex-end;
   }
   .modal-card{
     width:100%;
+    max-height:95vh;
     border-radius:18px 18px 0 0;
-    max-height:94vh;
   }
-  .modal-actions .btn{flex:1}
+  .modal-body{padding:14px}
+  .detail-grid{grid-template-columns:1fr 1fr}
+  .finance-grid{grid-template-columns:1fr 1fr}
+  .modal-actions .btn{flex:1 1 45%}
 }
-@media(max-width:380px){
-  .summary-grid{grid-template-columns:1fr}
-  .mobile-money{grid-template-columns:1fr 1fr}
+@media(max-width:390px){
+  .summary-grid{grid-template-columns:1fr 1fr}
+  .mobile-data{grid-template-columns:1fr 1fr}
+  .finance-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
-
 <body>
 
 <header class="topbar">
@@ -514,16 +535,16 @@ td.money,th.money{text-align:right}
       <img src="data:image/png;base64,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" alt="Campello Distribuição">
       <div>
         <strong>Campello Distribuição</strong>
-        <span>Gerenciador Financeiro</span>
+        <span>Pedidos e Faturamento</span>
       </div>
     </div>
 
     <nav class="main-nav">
       <a href="index.html">Home</a>
       <a href="vendas.html">Vendas</a>
-      <a href="pedidos.html">Pedidos</a>
+      <a class="active" href="pedidos.html">Pedidos</a>
       <a href="compras.html">Compras</a>
-      <a class="active" href="financeiro.html">Financeiro</a>
+      <a href="financeiro.html">Financeiro</a>
     </nav>
 
     <div id="connectionStatus" class="connection">● Conectando...</div>
@@ -532,210 +553,238 @@ td.money,th.money{text-align:right}
 
 <section class="hero">
   <div class="hero-inner">
-    <h1>Financeiro</h1>
+    <h1>Pedidos e Faturamento</h1>
     <p>
-      Acompanhe contas a receber e a pagar, vencimentos e baixas.
-      Os títulos são alimentados pelas vendas faturadas e pelas entradas de compras.
+      Aqui a venda deixa de ser somente um pedido e passa a movimentar a operação.
+      Ao faturar, o estoque é efetivado e os títulos a receber são enviados para o Financeiro.
     </p>
+
+    <div class="flow">
+      <span>Vendas</span>
+      <b>→</b>
+      <span>Pedido aberto</span>
+      <b>→</b>
+      <span>Separação</span>
+      <b>→</b>
+      <span>Faturado</span>
+      <b>→</b>
+      <span>Financeiro + Estoque</span>
+      <b>→</b>
+      <span>Entregue</span>
+    </div>
   </div>
 </section>
 
 <main class="container">
 
   <section class="summary-grid">
-    <div class="summary success">
-      <div class="label">A receber</div>
-      <div id="sumReceber" class="value">R$ 0,00</div>
-      <div id="sumReceberMeta" class="meta">Hoje: R$ 0,00</div>
+    <div class="summary">
+      <small>Aguardando faturamento</small>
+      <strong id="sumWaiting">0</strong>
+      <div class="sub">Orçamentos + pedidos + separação</div>
     </div>
 
     <div class="summary">
-      <div class="label">A pagar</div>
-      <div id="sumPagar" class="value">R$ 0,00</div>
-      <div id="sumPagarMeta" class="meta">Hoje: R$ 0,00</div>
-    </div>
-
-    <div class="summary danger">
-      <div class="label">Vencido</div>
-      <div id="sumVencido" class="value">R$ 0,00</div>
-      <div id="sumVencidoMeta" class="meta">Receber + Pagar</div>
+      <small>Pedidos abertos</small>
+      <strong id="sumOpen">0</strong>
+      <div class="sub">Ainda não faturados</div>
     </div>
 
     <div class="summary">
-      <div class="label">Saldo previsto</div>
-      <div id="sumSaldo" class="value">R$ 0,00</div>
-      <div class="meta">Receber − Pagar em aberto</div>
+      <small>Em separação</small>
+      <strong id="sumSeparation">0</strong>
+      <div class="sub">Preparando mercadoria</div>
+    </div>
+
+    <div class="summary">
+      <small>Faturados</small>
+      <strong id="sumInvoiced">0</strong>
+      <div class="sub">Financeiro já deve existir</div>
     </div>
   </section>
 
   <section class="card">
     <div class="card-head">
-      <h2>Contas</h2>
+      <h2>Pedidos</h2>
       <div id="updateTime" class="helper"></div>
     </div>
 
     <div class="card-body">
       <div class="filters">
-        <div class="search-field">
-          <label>Buscar</label>
-          <input id="search" placeholder="Cliente, fornecedor, pedido, NF ou título">
-        </div>
-
-        <div>
-          <label>Tipo</label>
-          <select id="typeFilter">
-            <option>Todos</option>
-            <option>Receber</option>
-            <option>Pagar</option>
-          </select>
+        <div class="search">
+          <label>Buscar pedido</label>
+          <input id="search" placeholder="Pedido, cliente, produto, vendedor...">
         </div>
 
         <div>
           <label>Status</label>
           <select id="statusFilter">
             <option>Todos</option>
-            <option>Em aberto</option>
-            <option>Vencido</option>
-            <option>Liquidado</option>
+            <option>Orçamento</option>
+            <option>Pedido aberto</option>
+            <option>Separação</option>
+            <option>Faturado</option>
+            <option>Entregue</option>
+            <option>Cancelado</option>
           </select>
         </div>
 
-        <div>
-          <label>Vencimento</label>
-          <select id="periodFilter">
-            <option>Todos</option>
-            <option>Vencidos</option>
-            <option>Hoje</option>
-            <option>7 dias</option>
-            <option>Este mês</option>
-          </select>
-        </div>
-
-        <div class="refresh-field">
+        <div class="refresh">
           <label>&nbsp;</label>
-          <button class="btn btn-primary" onclick="loadFinance()">Atualizar</button>
+          <button class="btn btn-primary" onclick="loadOrders()">Atualizar</button>
         </div>
       </div>
     </div>
 
-    <div id="tableArea" class="card-body" style="padding-top:0">
-      <div id="loading" class="loading">Carregando financeiro...</div>
+    <div class="card-body" style="padding-top:0">
+      <div id="loading" class="loading">Carregando pedidos...</div>
 
       <div id="desktopTable" class="table-wrap desktop-table" style="display:none">
         <table>
           <thead>
             <tr>
-              <th>Tipo</th>
-              <th>Título / Origem</th>
-              <th>Cliente / Fornecedor</th>
-              <th>Vencimento</th>
-              <th class="money">Previsto</th>
-              <th class="money">Pago/Recebido</th>
-              <th class="money">Saldo</th>
+              <th>Pedido</th>
+              <th>Cliente</th>
+              <th>Data</th>
+              <th>Pagamento</th>
+              <th class="money">Total</th>
               <th>Status</th>
+              <th>Financeiro</th>
               <th></th>
             </tr>
           </thead>
-          <tbody id="financeRows"></tbody>
+          <tbody id="orderRows"></tbody>
         </table>
       </div>
 
       <div id="mobileList" class="mobile-list"></div>
 
       <div id="empty" class="empty" style="display:none">
-        Nenhum título encontrado com esses filtros.
+        Nenhum pedido encontrado.
       </div>
 
       <div id="truncated" class="helper" style="display:none;margin-top:10px">
-        A busca encontrou mais registros do que o limite exibido. Refine os filtros ou a pesquisa.
+        Há mais registros do que o limite exibido. Refine a pesquisa ou o filtro.
       </div>
     </div>
   </section>
 </main>
 
-<div id="settlementModal" class="modal">
+<div id="orderModal" class="modal">
   <div class="modal-card">
     <div class="modal-head">
-      <h2 id="settlementTitle">Dar baixa</h2>
-      <button class="btn btn-light" onclick="closeSettlement()">Fechar</button>
+      <h2 id="modalHeading">Pedido</h2>
+      <button class="btn btn-light" onclick="closeOrder()">Fechar</button>
     </div>
 
     <div class="modal-body">
+
       <div class="detail-grid">
         <div class="detail">
-          <small>Título</small>
-          <strong id="modalTitleId"></strong>
+          <small>Pedido</small>
+          <strong id="dOrder"></strong>
         </div>
         <div class="detail">
-          <small>Parceiro</small>
-          <strong id="modalPartner"></strong>
+          <small>Status</small>
+          <strong id="dStatus"></strong>
         </div>
         <div class="detail">
-          <small>Parcela</small>
-          <strong id="modalInstallment"></strong>
+          <small>Cliente</small>
+          <strong id="dClient"></strong>
         </div>
         <div class="detail">
-          <small>Valor previsto</small>
-          <strong id="modalExpected"></strong>
+          <small>Data</small>
+          <strong id="dDate"></strong>
         </div>
         <div class="detail">
-          <small>Já baixado</small>
-          <strong id="modalPaid"></strong>
+          <small>Vendedor</small>
+          <strong id="dSeller"></strong>
         </div>
         <div class="detail">
-          <small>Saldo</small>
-          <strong id="modalBalance"></strong>
+          <small>Pagamento</small>
+          <strong id="dPayment"></strong>
+        </div>
+        <div class="detail">
+          <small>Subtotal</small>
+          <strong id="dSubtotal"></strong>
+        </div>
+        <div class="detail">
+          <small>Total</small>
+          <strong id="dTotal"></strong>
         </div>
       </div>
 
-      <div id="settlementForm">
-        <div class="form-grid">
+      <h3 class="section-title">Produtos</h3>
+      <div class="items-table">
+        <table>
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Produto</th>
+              <th class="money">Qtd.</th>
+              <th>Un.</th>
+              <th class="money">Preço</th>
+              <th class="money">Total</th>
+            </tr>
+          </thead>
+          <tbody id="modalItems"></tbody>
+        </table>
+      </div>
+
+      <div class="finance-box">
+        <h3 class="section-title" style="margin-top:0">Condições para faturamento</h3>
+
+        <div class="finance-grid">
           <div>
-            <label id="amountLabel">Valor da baixa</label>
-            <input id="settlementAmount" type="number" min="0.01" step="0.01">
+            <label>Forma de pagamento</label>
+            <select id="billingPayment">
+              <option>Pix</option>
+              <option>Dinheiro</option>
+              <option>Boleto</option>
+              <option>Cartão</option>
+              <option>Transferência</option>
+              <option>Prazo</option>
+              <option>Outro</option>
+            </select>
           </div>
 
           <div>
-            <label>Data</label>
-            <input id="settlementDate" type="date">
+            <label>Parcelas</label>
+            <input id="billingInstallments" type="number" min="1" max="60" step="1">
+          </div>
+
+          <div>
+            <label>1º vencimento</label>
+            <input id="billingFirstDue" type="date">
+          </div>
+
+          <div>
+            <label>Intervalo (dias)</label>
+            <input id="billingInterval" type="number" min="0" max="365" step="1">
           </div>
 
           <div>
             <label>Conta</label>
-            <select id="settlementAccount">
+            <select id="billingAccount">
               <option>Banco</option>
               <option>Caixa</option>
               <option>Cartão</option>
               <option>Outro</option>
             </select>
           </div>
-
-          <div>
-            <label>Responsável</label>
-            <input id="settlementResponsible" placeholder="Quem registrou a baixa">
-          </div>
         </div>
 
-        <div style="margin-top:10px">
-          <label>Observação</label>
-          <textarea id="settlementNotes" placeholder="Ex.: PIX recebido, pagamento parcial, comprovante..."></textarea>
-        </div>
+        <div id="financeStatus" class="finance-status"></div>
 
-        <div class="helper" style="margin-top:8px">
-          Você pode baixar apenas uma parte do saldo. O restante continuará em aberto.
+        <div class="warning">
+          <strong>Faturar neste módulo não emite NF-e fiscal.</strong>
+          Esta ação efetiva a venda dentro do sistema: muda o pedido para Faturado,
+          movimenta o estoque conforme as fórmulas da base e gera o Contas a Receber.
         </div>
       </div>
-
-      <section class="history">
-        <h3>Histórico de baixas</h3>
-        <div id="historyList" class="helper">Carregando...</div>
-      </section>
     </div>
 
-    <div class="modal-actions">
-      <button class="btn btn-light" onclick="closeSettlement()">Cancelar</button>
-      <button id="settlementBtn" class="btn btn-green" onclick="confirmSettlement()">Confirmar baixa</button>
-    </div>
+    <div id="modalActions" class="modal-actions"></div>
   </div>
 </div>
 
@@ -745,8 +794,8 @@ td.money,th.money{text-align:right}
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbxPZaI7aJJ8uLcTX8LtiePLsugCGTFsLFVAuGvsvLNz9BPqqlM2oKi-zU9HNkRWPCIitA/exec';
 
-let financeData = [];
-let currentTitle = null;
+let orders = [];
+let currentOrder = null;
 let searchTimer = null;
 
 const $ = id => document.getElementById(id);
@@ -773,23 +822,50 @@ function toast(message){
   el.textContent = message;
   el.style.display = 'block';
 
-  clearTimeout(window.__toastTimer);
+  clearTimeout(window.__toast);
 
-  window.__toastTimer =
+  window.__toast =
     setTimeout(
       () => el.style.display = 'none',
-      3500
+      3800
     );
+}
+
+function statusBadge(status){
+  const cls = {
+    'Orçamento':'status-orcamento',
+    'Pedido aberto':'status-aberto',
+    'Separação':'status-separacao',
+    'Faturado':'status-faturado',
+    'Entregue':'status-entregue',
+    'Cancelado':'status-cancelado'
+  }[status] || 'status-orcamento';
+
+  return `<span class="badge ${cls}">${esc(status || '-')}</span>`;
+}
+
+function financeBadge(order){
+  if(order.finance && order.finance.generated){
+    return `
+      <span class="badge finance-ok">
+        GERADO · ${order.finance.titleCount} título(s)
+      </span>
+    `;
+  }
+
+  return '<span class="badge finance-no">NÃO GERADO</span>';
 }
 
 function uniqueId(){
   return (
     Date.now().toString(36) +
-    Math.random().toString(36).slice(2)
+    Math.random()
+      .toString(36)
+      .slice(2)
   );
 }
 
-function apiGet(action, params={}, timeout=15000){
+function apiGet(action, params={}, timeout=16000){
   return new Promise((resolve,reject)=>{
     const callback =
       '__campello_' +
@@ -852,7 +928,7 @@ function apiGet(action, params={}, timeout=15000){
   });
 }
 
-async function loadFinance(){
+async function loadOrders(){
   $('loading').style.display = 'block';
   $('desktopTable').style.display = 'none';
   $('mobileList').innerHTML = '';
@@ -861,32 +937,39 @@ async function loadFinance(){
   try{
     const data =
       await apiGet(
-        'finance',
+        'orders',
         {
           q:$('search').value.trim(),
-          type:$('typeFilter').value,
           status:$('statusFilter').value,
-          period:$('periodFilter').value,
           limit:500
         },
-        20000
+        22000
       );
 
     if(!data.ok){
       throw new Error(
         data.erro ||
-        'Não foi possível consultar o financeiro.'
+        'Não foi possível carregar os pedidos.'
       );
     }
 
-    financeData =
-      data.titulos || [];
+    orders =
+      data.pedidos || [];
 
-    renderSummary(
-      data.resumo || {}
-    );
+    const r =
+      data.resumo || {};
 
-    renderFinance();
+    $('sumWaiting').textContent =
+      r.aguardandoFaturamento || 0;
+
+    $('sumOpen').textContent =
+      r.pedidoAberto || 0;
+
+    $('sumSeparation').textContent =
+      r.separacao || 0;
+
+    $('sumInvoiced').textContent =
+      r.faturado || 0;
 
     $('updateTime').textContent =
       data.atualizadoEm
@@ -899,12 +982,11 @@ async function loadFinance(){
         : 'none';
 
     $('connectionStatus').textContent =
-      '● Financeiro conectado';
+      '● Pedidos conectado';
+
+    renderOrders();
 
   }catch(err){
-    $('connectionStatus').textContent =
-      '● Erro de conexão';
-
     $('loading').style.display =
       'none';
 
@@ -914,58 +996,20 @@ async function loadFinance(){
     $('empty').textContent =
       err.message || String(err);
 
+    $('connectionStatus').textContent =
+      '● Erro de conexão';
+
     toast(
       err.message || String(err)
     );
   }
 }
 
-function renderSummary(s){
-  $('sumReceber').textContent =
-    money(s.receberAberto);
-
-  $('sumPagar').textContent =
-    money(s.pagarAberto);
-
-  $('sumVencido').textContent =
-    money(
-      Number(s.receberVencido || 0) +
-      Number(s.pagarVencido || 0)
-    );
-
-  $('sumSaldo').textContent =
-    money(s.saldoPrevisto);
-
-  $('sumReceberMeta').textContent =
-    `Hoje: ${money(s.receberHoje)} · Vencido: ${money(s.receberVencido)}`;
-
-  $('sumPagarMeta').textContent =
-    `Hoje: ${money(s.pagarHoje)} · Vencido: ${money(s.pagarVencido)}`;
-}
-
-function typeBadge(t){
-  return t === 'Receber'
-    ? '<span class="badge badge-receber">A RECEBER</span>'
-    : '<span class="badge badge-pagar">A PAGAR</span>';
-}
-
-function statusBadge(status){
-  if(status === 'Liquidado'){
-    return '<span class="badge badge-paid">LIQUIDADO</span>';
-  }
-
-  if(status === 'Vencido'){
-    return '<span class="badge badge-overdue">VENCIDO</span>';
-  }
-
-  return '<span class="badge badge-open">EM ABERTO</span>';
-}
-
-function renderFinance(){
+function renderOrders(){
   $('loading').style.display =
     'none';
 
-  if(!financeData.length){
+  if(!orders.length){
     $('desktopTable').style.display =
       'none';
 
@@ -983,252 +1027,327 @@ function renderFinance(){
   $('desktopTable').style.display =
     'block';
 
-  $('financeRows').innerHTML =
-    financeData.map(t => `
+  $('orderRows').innerHTML =
+    orders.map(o => `
       <tr>
-        <td>${typeBadge(t.type)}</td>
-
         <td>
-          <div class="title-main">${esc(t.id)}</div>
-          <div class="title-meta">
-            ${esc(t.origin)} · ${esc(t.originId)} · Parc. ${esc(t.installment || '-')}
-          </div>
+          <div class="main-text">${esc(o.id)}</div>
+          <div class="meta">${esc(o.seller || '')}</div>
         </td>
 
         <td>
-          <div class="title-main">${esc(t.partner || '-')}</div>
-          <div class="title-meta">${esc(t.document || '')}</div>
+          <div class="main-text">${esc(o.client || '-')}</div>
+          <div class="meta">${esc(o.clientId || '')}</div>
         </td>
 
-        <td>${esc(t.dueDate || '-')}</td>
-
-        <td class="money">${money(t.expected)}</td>
-
-        <td class="money">${money(t.paid)}</td>
-
-        <td class="money"><strong>${money(t.balance)}</strong></td>
-
-        <td>${statusBadge(t.status)}</td>
+        <td>${esc(o.date || '-')}</td>
 
         <td>
-          <button
-            class="btn ${t.status === 'Liquidado' ? 'btn-light' : 'btn-primary'}"
-            onclick="openTitle('${esc(t.id)}')"
-          >
-            ${t.status === 'Liquidado' ? 'Ver' : 'Dar baixa'}
+          ${esc(o.payment || '-')}
+          <div class="meta">${esc(o.condition || '')}</div>
+        </td>
+
+        <td class="money">
+          <strong>${money(o.total)}</strong>
+        </td>
+
+        <td>${statusBadge(o.status)}</td>
+
+        <td>${financeBadge(o)}</td>
+
+        <td>
+          <button class="btn btn-primary" onclick="openOrder('${esc(o.id)}')">
+            Abrir
           </button>
         </td>
       </tr>
     `).join('');
 
   $('mobileList').innerHTML =
-    financeData.map(t => `
-      <article class="mobile-title">
-        <div class="mobile-title-head">
-          <div>${typeBadge(t.type)}</div>
-          <div>${statusBadge(t.status)}</div>
+    orders.map(o => `
+      <article class="mobile-order">
+        <div class="mobile-head">
+          ${statusBadge(o.status)}
+          ${financeBadge(o)}
         </div>
 
-        <h3>${esc(t.id)}</h3>
+        <h3>${esc(o.id)}</h3>
+        <div class="client">${esc(o.client || '-')}</div>
 
-        <div class="partner">
-          ${esc(t.partner || '-')}
-          · ${esc(t.installment || '-')}
-          · vence ${esc(t.dueDate || '-')}
-        </div>
-
-        <div class="mobile-money">
+        <div class="mobile-data">
           <div>
-            <small>Previsto</small>
-            <strong>${money(t.expected)}</strong>
+            <small>Data</small>
+            <strong>${esc(o.date || '-')}</strong>
           </div>
-
           <div>
-            <small>Baixado</small>
-            <strong>${money(t.paid)}</strong>
+            <small>Total</small>
+            <strong>${money(o.total)}</strong>
           </div>
-
           <div>
-            <small>Saldo</small>
-            <strong>${money(t.balance)}</strong>
+            <small>Pagamento</small>
+            <strong>${esc(o.payment || '-')}</strong>
           </div>
         </div>
 
         <div class="mobile-footer">
           <span class="helper">
-            ${esc(t.origin)} · ${esc(t.document || t.originId || '')}
+            ${o.items.length} item(ns)
+            ${o.seller ? ' · ' + esc(o.seller) : ''}
           </span>
 
-          <button
-            class="btn ${t.status === 'Liquidado' ? 'btn-light' : 'btn-primary'}"
-            onclick="openTitle('${esc(t.id)}')"
-          >
-            ${t.status === 'Liquidado' ? 'Ver histórico' : 'Dar baixa'}
+          <button class="btn btn-primary" onclick="openOrder('${esc(o.id)}')">
+            Abrir pedido
           </button>
         </div>
       </article>
     `).join('');
 }
 
-async function openTitle(id){
-  currentTitle =
-    financeData.find(
-      t => t.id === id
+function openOrder(id){
+  currentOrder =
+    orders.find(
+      o => o.id === id
     );
 
-  if(!currentTitle){
-    toast('Título não encontrado na tela.');
+  if(!currentOrder){
+    toast('Pedido não encontrado.');
     return;
   }
 
-  $('modalTitleId').textContent =
-    currentTitle.id;
+  $('modalHeading').textContent =
+    `${currentOrder.id} · ${currentOrder.client || ''}`;
 
-  $('modalPartner').textContent =
-    currentTitle.partner || '-';
+  $('dOrder').textContent =
+    currentOrder.id;
 
-  $('modalInstallment').textContent =
-    currentTitle.installment || '-';
+  $('dStatus').innerHTML =
+    statusBadge(
+      currentOrder.status
+    );
 
-  $('modalExpected').textContent =
-    money(currentTitle.expected);
+  $('dClient').textContent =
+    currentOrder.client || '-';
 
-  $('modalPaid').textContent =
-    money(currentTitle.paid);
+  $('dDate').textContent =
+    currentOrder.date || '-';
 
-  $('modalBalance').textContent =
-    money(currentTitle.balance);
+  $('dSeller').textContent =
+    currentOrder.seller || '-';
 
-  $('settlementTitle').textContent =
-    currentTitle.type === 'Receber'
-      ? 'Registrar recebimento'
-      : 'Registrar pagamento';
+  $('dPayment').textContent =
+    currentOrder.payment || '-';
 
-  $('amountLabel').textContent =
-    currentTitle.type === 'Receber'
-      ? 'Valor recebido'
-      : 'Valor pago';
+  $('dSubtotal').textContent =
+    money(
+      currentOrder.subtotal
+    );
 
-  $('settlementAmount').value =
-    Number(
-      currentTitle.balance || 0
-    ).toFixed(2);
+  $('dTotal').textContent =
+    money(
+      currentOrder.total
+    );
 
-  $('settlementAmount').max =
-    Number(
-      currentTitle.balance || 0
-    ).toFixed(2);
+  $('modalItems').innerHTML =
+    (currentOrder.items || [])
+      .map(item => `
+        <tr>
+          <td>${esc(item.sku)}</td>
+          <td>${esc(item.name || '-')}</td>
+          <td class="money">${Number(item.qty || 0).toLocaleString('pt-BR')}</td>
+          <td>${esc(item.unit || '-')}</td>
+          <td class="money">${money(item.effectivePrice || item.negotiatedPrice)}</td>
+          <td class="money"><strong>${money(item.total)}</strong></td>
+        </tr>
+      `)
+      .join('');
 
-  const today = new Date();
+  setBillingDefaults();
+  renderFinanceStatus();
+  renderActions();
 
-  $('settlementDate').value =
-    today.getFullYear() + '-' +
-    String(today.getMonth()+1).padStart(2,'0') + '-' +
-    String(today.getDate()).padStart(2,'0');
+  $('orderModal').style.display =
+    'flex';
+}
 
-  const account =
-    currentTitle.account || 'Banco';
+function setBillingDefaults(){
+  if(!currentOrder){
+    return;
+  }
+
+  const f =
+    currentOrder.financeConfig || {};
+
+  const payment =
+    currentOrder.payment || 'Pix';
 
   if(
-    [...$('settlementAccount').options]
-      .some(o => o.value === account)
+    [...$('billingPayment').options]
+      .some(o => o.value === payment)
   ){
-    $('settlementAccount').value =
-      account;
+    $('billingPayment').value =
+      payment;
   }else{
-    $('settlementAccount').value =
+    $('billingPayment').value =
       'Outro';
   }
 
-  $('settlementNotes').value = '';
+  $('billingInstallments').value =
+    Math.max(
+      1,
+      Number(f.installments || 1)
+    );
 
-  const liquidado =
-    currentTitle.status === 'Liquidado';
+  let due =
+    f.firstDueDateIso || '';
 
-  $('settlementForm').style.display =
-    liquidado
-      ? 'none'
-      : 'block';
+  if(!due){
+    const d = new Date();
 
-  $('settlementBtn').style.display =
-    liquidado
-      ? 'none'
-      : 'inline-block';
+    due =
+      d.getFullYear() + '-' +
+      String(d.getMonth()+1)
+        .padStart(2,'0') + '-' +
+      String(d.getDate())
+        .padStart(2,'0');
+  }
 
-  $('historyList').innerHTML =
-    'Carregando histórico...';
+  $('billingFirstDue').value =
+    due;
 
-  $('settlementModal').style.display =
-    'flex';
+  $('billingInterval').value =
+    Number(
+      f.intervalDays ?? 30
+    );
 
-  await loadHistory(
-    currentTitle.id
-  );
-}
+  const account =
+    f.account || 'Banco';
 
-async function loadHistory(titleId){
-  try{
-    const data =
-      await apiGet(
-        'financeHistory',
-        {titleId},
-        12000
+  if(
+    [...$('billingAccount').options]
+      .some(o => o.value === account)
+  ){
+    $('billingAccount').value =
+      account;
+  }else{
+    $('billingAccount').value =
+      'Outro';
+  }
+
+  const locked =
+    ['Faturado','Entregue','Cancelado']
+      .includes(
+        currentOrder.status
       );
 
-    const history =
-      data.historico || [];
+  [
+    'billingPayment',
+    'billingInstallments',
+    'billingFirstDue',
+    'billingInterval',
+    'billingAccount'
+  ].forEach(id => {
+    $(id).disabled = locked;
+  });
+}
 
-    if(!history.length){
-      $('historyList').innerHTML =
-        '<div class="helper">Ainda não existe nenhuma baixa registrada para este título.</div>';
+function renderFinanceStatus(){
+  if(!currentOrder){
+    return;
+  }
 
-      return;
-    }
+  const f =
+    currentOrder.finance || {};
 
-    $('historyList').innerHTML =
-      history.map(h => `
-        <div class="history-item">
-          <strong>
-            ${esc(h.event)} · ${money(h.amount)}
-          </strong>
-
-          <div>
-            ${esc(h.date || '')}
-            ${h.account ? ' · ' + esc(h.account) : ''}
-            ${h.responsible ? ' · ' + esc(h.responsible) : ''}
-          </div>
-
-          <div class="history-meta">
-            Saldo: ${money(h.balanceBefore)} → ${money(h.balanceAfter)}
-          </div>
-
-          ${h.notes
-            ? `<div class="history-meta">${esc(h.notes)}</div>`
-            : ''
-          }
-        </div>
-      `).join('');
-
-  }catch(err){
-    $('historyList').textContent =
-      'Não foi possível carregar o histórico.';
+  if(f.generated){
+    $('financeStatus').innerHTML = `
+      <span class="badge finance-ok">FINANCEIRO GERADO</span>
+      <span class="helper">
+        ${f.titleCount || 0} título(s) ·
+        Previsto ${money(f.expected)} ·
+        Saldo ${money(f.balance)}
+      </span>
+    `;
+  }else{
+    $('financeStatus').innerHTML = `
+      <span class="badge finance-no">FINANCEIRO AINDA NÃO GERADO</span>
+      <span class="helper">Será criado quando a venda for faturada.</span>
+    `;
   }
 }
 
-function closeSettlement(){
-  $('settlementModal').style.display =
-    'none';
+function renderActions(){
+  if(!currentOrder){
+    return;
+  }
 
-  currentTitle = null;
+  const status =
+    currentOrder.status;
+
+  const actions = [];
+
+  actions.push(
+    `<button class="btn btn-light" onclick="closeOrder()">Fechar</button>`
+  );
+
+  if(status === 'Orçamento'){
+    actions.push(
+      `<button class="btn btn-blue" onclick="runWorkflow('approve')">Aprovar pedido</button>`
+    );
+
+    actions.push(
+      `<button class="btn btn-green" onclick="runWorkflow('invoice')">Faturar direto</button>`
+    );
+
+    actions.push(
+      `<button class="btn btn-red" onclick="runWorkflow('cancel')">Cancelar</button>`
+    );
+
+  }else if(status === 'Pedido aberto'){
+    actions.push(
+      `<button class="btn btn-orange" onclick="runWorkflow('separate')">Enviar para separação</button>`
+    );
+
+    actions.push(
+      `<button class="btn btn-green" onclick="runWorkflow('invoice')">Faturar venda</button>`
+    );
+
+    actions.push(
+      `<button class="btn btn-red" onclick="runWorkflow('cancel')">Cancelar</button>`
+    );
+
+  }else if(status === 'Separação'){
+    actions.push(
+      `<button class="btn btn-green" onclick="runWorkflow('invoice')">Faturar venda</button>`
+    );
+
+    actions.push(
+      `<button class="btn btn-red" onclick="runWorkflow('cancel')">Cancelar</button>`
+    );
+
+  }else if(status === 'Faturado'){
+    actions.push(
+      `<button class="btn btn-blue" onclick="runWorkflow('deliver')">Marcar como entregue</button>`
+    );
+  }
+
+  $('modalActions').innerHTML =
+    actions.join('');
 }
 
-function submitSettlement(payload){
+function closeOrder(){
+  $('orderModal').style.display =
+    'none';
+
+  currentOrder = null;
+}
+
+function submitWorkflow(payload){
   return new Promise((resolve,reject)=>{
     const requestId =
       uniqueId();
 
     payload.kind =
-      'financeSettlement';
+      'orderWorkflow';
 
     payload.requestId =
       requestId;
@@ -1274,11 +1393,11 @@ function submitSettlement(payload){
       async () => {
         if(
           Date.now() - started >
-          25000
+          30000
         ){
           reject(
             new Error(
-              'A baixa pode ter sido gravada, mas a confirmação demorou. Atualize o financeiro antes de tentar novamente.'
+              'A operação pode ter sido concluída, mas a confirmação demorou. Atualize a tela antes de tentar novamente.'
             )
           );
           return;
@@ -1287,7 +1406,7 @@ function submitSettlement(payload){
         try{
           const status =
             await apiGet(
-              'financeSettlementStatus',
+              'orderWorkflowStatus',
               {requestId},
               8000
             );
@@ -1304,7 +1423,7 @@ function submitSettlement(payload){
             reject(
               new Error(
                 status.erro ||
-                'Não foi possível registrar a baixa.'
+                'Não foi possível atualizar o pedido.'
               )
             );
             return;
@@ -1329,67 +1448,79 @@ function submitSettlement(payload){
   });
 }
 
-async function confirmSettlement(){
-  if(!currentTitle){
+async function runWorkflow(operation){
+  if(!currentOrder){
     return;
   }
 
-  const amount =
-    Number(
-      $('settlementAmount').value || 0
-    );
+  const labels = {
+    approve:'aprovar este orçamento como pedido',
+    separate:'enviar este pedido para separação',
+    invoice:'FATURAR esta venda',
+    deliver:'marcar este pedido como entregue',
+    cancel:'CANCELAR este pedido'
+  };
 
-  if(amount <= 0){
-    toast('Informe o valor da baixa.');
+  let confirmation =
+    `Confirma que deseja ${labels[operation]}?`;
+
+  if(operation === 'invoice'){
+    confirmation +=
+      '\n\nIsso vai efetivar o estoque e gerar o Contas a Receber.';
+  }
+
+  if(operation === 'cancel'){
+    confirmation +=
+      '\n\nA reserva de estoque será liberada.';
+  }
+
+  if(!confirm(confirmation)){
     return;
   }
 
-  if(
-    amount >
-    Number(currentTitle.balance || 0) +
-    0.01
-  ){
-    toast(
-      'O valor não pode ser maior que o saldo do título.'
-    );
-    return;
-  }
+  const buttons =
+    $('modalActions')
+      .querySelectorAll('button');
 
-  const btn =
-    $('settlementBtn');
-
-  btn.disabled = true;
-  btn.textContent =
-    'Registrando...';
+  buttons.forEach(
+    b => b.disabled = true
+  );
 
   try{
     const result =
-      await submitSettlement({
-        titleId:currentTitle.id,
-        amount,
-        date:$('settlementDate').value,
-        account:$('settlementAccount').value,
-        responsible:$('settlementResponsible').value.trim(),
-        notes:$('settlementNotes').value.trim()
+      await submitWorkflow({
+        orderId:currentOrder.id,
+        operation,
+        payment:$('billingPayment').value,
+        finance:{
+          installments:Number(
+            $('billingInstallments').value || 1
+          ),
+          firstDueDate:$('billingFirstDue').value,
+          intervalDays:Number(
+            $('billingInterval').value || 0
+          ),
+          account:$('billingAccount').value
+        }
       });
 
     toast(
-      `${result.settlementType} de ${money(result.amount)} registrado.`
+      result.message ||
+      `Pedido atualizado para ${result.status}.`
     );
 
-    closeSettlement();
+    closeOrder();
 
-    await loadFinance();
+    await loadOrders();
 
   }catch(err){
     toast(
       err.message || String(err)
     );
 
-  }finally{
-    btn.disabled = false;
-    btn.textContent =
-      'Confirmar baixa';
+    buttons.forEach(
+      b => b.disabled = false
+    );
   }
 }
 
@@ -1402,54 +1533,42 @@ $('search').addEventListener(
 
     searchTimer =
       setTimeout(
-        loadFinance,
+        loadOrders,
         450
       );
   }
 );
 
-[
-  'typeFilter',
-  'statusFilter',
-  'periodFilter'
-].forEach(
-  id => {
-    $(id).addEventListener(
-      'change',
-      loadFinance
-    );
-  }
+$('statusFilter').addEventListener(
+  'change',
+  loadOrders
 );
 
-$('settlementModal').addEventListener(
+$('orderModal').addEventListener(
   'click',
   e => {
     if(
       e.target ===
-      $('settlementModal')
+      $('orderModal')
     ){
-      closeSettlement();
+      closeOrder();
     }
   }
 );
 
 apiGet('ping')
   .then(data => {
-    if(data.ok){
-      $('connectionStatus').textContent =
-        '● Financeiro conectado';
-    }else{
-      $('connectionStatus').textContent =
-        '● Erro de conexão';
-    }
+    $('connectionStatus').textContent =
+      data.ok
+        ? '● Pedidos conectado'
+        : '● Erro de conexão';
   })
   .catch(() => {
     $('connectionStatus').textContent =
       '● Erro de conexão';
   });
 
-loadFinance();
+loadOrders();
 </script>
-
 </body>
 </html>
