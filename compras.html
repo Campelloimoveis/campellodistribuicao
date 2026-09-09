@@ -55,6 +55,44 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
 @media(max-width:850px){.grid{grid-template-columns:1fr}.row,.small-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.topbar-inner{padding:8px 12px}.brand img{width:52px;height:52px}.container{padding:0 12px 28px}.hero h1{font-size:23px}.row,.small-grid,.product-controls{grid-template-columns:1fr}.card-body{padding:14px}.status{display:none}.main-nav a{padding:8px 9px;font-size:12px}}
 @media print{body *{visibility:hidden}#modal,#modal *{visibility:visible}#modal{display:block!important;position:absolute;inset:0;background:#fff}.modal-card{max-height:none}.modal-actions{display:none!important}}
+
+/* ===== IMPORTAÇÃO NF-e XML ===== */
+.header-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.btn-xml{background:#176b3a;color:#fff}
+.nfe-banner{display:none;margin:12px 0 0;padding:12px 14px;border:1px solid #b9dec8;background:#eef9f2;border-radius:12px;font-size:13px;color:#245c38}
+.nfe-banner strong{color:#176b3a}
+.nfe-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.nfe-box{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fafbfc}
+.nfe-box strong{display:block;color:var(--navy);margin-bottom:4px}
+.nfe-status{display:inline-block;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;margin-top:6px}
+.nfe-ok{background:#e8f5ed;color:#176b3a}
+.nfe-warn{background:#fff3cd;color:#7a5b00}
+.nfe-table{width:100%;border-collapse:collapse;margin-top:12px}
+.nfe-table th,.nfe-table td{border-bottom:1px solid var(--line);padding:9px 7px;text-align:left;font-size:12px;vertical-align:middle}
+.nfe-table th{color:var(--navy);background:#f7f9fb;position:sticky;top:0}
+.nfe-item-desc{font-weight:700;color:var(--navy)}
+.nfe-item-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.nfe-match{font-size:11px;color:#176b3a;font-weight:700}
+.nfe-unmatched{font-size:11px;color:#9a6700;font-weight:700}
+.nfe-progress{font-size:12px;color:var(--muted);margin-top:10px}
+.nfe-modal-card{width:min(1050px,100%)}
+.nfe-table-wrap{overflow:auto;max-height:48vh;border:1px solid var(--line);border-radius:12px}
+@media(max-width:700px){
+  .nfe-grid{grid-template-columns:1fr}
+  .header-actions{width:100%;justify-content:stretch}
+  .header-actions .btn{flex:1}
+}
+
+
+.finance-box{
+  border:1px solid #d8e2ec;
+  background:#f8fafc;
+  border-radius:12px;
+  padding:14px;
+}
+.finance-title{font-weight:800;color:var(--navy);margin-bottom:10px}
+.finance-helper{font-size:12px;color:var(--muted);margin-top:8px}
+
 </style>
 </head>
 <body>
@@ -78,14 +116,20 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
 <main class="container">
 <section class="hero">
   <h1>Nova entrada de mercadoria</h1>
-  <p>Registre compras e aumente o estoque diretamente pela aba 05_MOV_ESTOQUE.</p>
+  <p>Registre compras manualmente ou importe uma NF-e em XML para preencher fornecedor, documento, produtos, quantidades e custos.</p>
 </section>
 
 <div class="grid">
 <div>
 
 <section class="card">
-<div class="card-header"><h2>1. Dados da compra</h2><button class="btn btn-light" type="button" onclick="openSupplierModal()">+ Cadastrar novo fornecedor</button></div>
+<div class="card-header">
+  <h2>1. Dados da compra</h2>
+  <div class="header-actions">
+    <button class="btn btn-xml" type="button" onclick="selectNfeXml()">Importar NF-e (XML)</button>
+    <button class="btn btn-light" type="button" onclick="openSupplierModal()">+ Cadastrar novo fornecedor</button>
+  </div>
+</div>
 <div class="card-body">
   <label>Fornecedor</label>
   <div class="search-wrap">
@@ -98,6 +142,14 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
     <strong id="supplierName"></strong>
     <div class="meta" id="supplierMeta"></div>
   </div>
+  <input
+    id="nfeXmlFile"
+    type="file"
+    accept=".xml,text/xml,application/xml"
+    style="display:none"
+    onchange="handleNfeXmlFile(event)"
+  >
+  <div id="nfeBanner" class="nfe-banner"></div>
 
   <div class="spacer"></div>
   <div class="small-grid">
@@ -159,6 +211,72 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
 </div>
 </section>
 
+<div class="spacer"></div>
+
+<section class="card">
+  <div class="card-header"><h2>4. Financeiro da compra</h2></div>
+  <div class="card-body">
+    <div class="finance-box">
+      <div class="checkline" style="margin-top:0">
+        <input id="generatePayable" type="checkbox" checked>
+        <label for="generatePayable">
+          Gerar automaticamente o <strong>Contas a Pagar</strong> em 08_FINANCEIRO.
+        </label>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="small-grid">
+        <div>
+          <label>Forma de pagamento</label>
+          <select id="purchasePayment">
+            <option>Pix</option>
+            <option>Dinheiro</option>
+            <option>Boleto</option>
+            <option>Cartão</option>
+            <option>Transferência</option>
+            <option>Prazo</option>
+            <option>Outro</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Parcelas</label>
+          <input id="purchaseInstallments" type="number" min="1" max="48" step="1" value="1">
+        </div>
+
+        <div>
+          <label>1º vencimento</label>
+          <input id="purchaseFirstDueDate" type="date">
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="row">
+        <div>
+          <label>Intervalo entre parcelas (dias)</label>
+          <input id="purchaseIntervalDays" type="number" min="0" step="1" value="30">
+        </div>
+
+        <div>
+          <label>Conta financeira</label>
+          <select id="purchaseAccount">
+            <option>Banco</option>
+            <option>Caixa</option>
+            <option>Cartão</option>
+            <option>Outro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="finance-helper">
+        A compra gera contas a pagar no momento da entrada. A baixa do pagamento será feita posteriormente no módulo Financeiro.
+      </div>
+    </div>
+  </div>
+</section>
+
 </div>
 
 <aside class="card">
@@ -189,6 +307,65 @@ input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,26
 <div id="toast" class="toast"></div>
 <iframe name="apiPostFrame" id="apiPostFrame" style="display:none"></iframe>
 
+
+
+<div id="nfeModal" class="modal">
+  <div class="modal-card nfe-modal-card">
+    <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start">
+      <div>
+        <h2 style="margin:0;color:#001a33">Conferência da NF-e</h2>
+        <div class="helper" style="margin-top:5px">
+          Confira o fornecedor, o documento e o vínculo dos produtos antes de usar os dados na entrada.
+        </div>
+      </div>
+      <button class="btn btn-light" onclick="closeNfeModal()">Fechar</button>
+    </div>
+
+    <div id="nfeProgress" class="nfe-progress"></div>
+
+    <div class="nfe-grid">
+      <div class="nfe-box">
+        <strong>NF-e</strong>
+        <div id="nfeDocInfo"></div>
+      </div>
+      <div class="nfe-box">
+        <strong>Fornecedor do XML</strong>
+        <div id="nfeSupplierInfo"></div>
+        <div id="nfeSupplierStatus"></div>
+      </div>
+    </div>
+
+    <div class="nfe-table-wrap">
+      <table class="nfe-table">
+        <thead>
+          <tr>
+            <th>Produto da NF-e</th>
+            <th>Qtd.</th>
+            <th>Custo unit.</th>
+            <th>Produto Campello</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="nfeItems"></tbody>
+      </table>
+    </div>
+
+    <div class="helper" style="margin-top:10px">
+      O sistema vincula automaticamente somente quando encontra correspondência segura por
+      código de barras, SKU/código ou descrição exata. Itens não reconhecidos precisam ser vinculados manualmente.
+    </div>
+
+    <div class="modal-actions">
+      <button id="nfeRegisterSupplierBtn" class="btn btn-light" onclick="registerSupplierFromNfe()" style="display:none">
+        Cadastrar fornecedor da NF-e
+      </button>
+      <button class="btn btn-light" onclick="closeNfeModal()">Cancelar</button>
+      <button id="nfeApplyBtn" class="btn btn-primary" onclick="applyNfeImport()" disabled>
+        Usar dados da NF-e
+      </button>
+    </div>
+  </div>
+</div>
 
 <div id="supplierModal" class="modal">
   <div class="modal-card" style="width:min(760px,100%)">
@@ -296,6 +473,9 @@ let cart = [];
 let savedPurchase = null;
 let supplierTimer = null;
 let productTimer = null;
+let importedNfe = null;
+let xmlLinkTargetIndex = null;
+let xmlSupplierPending = false;
 
 const $ = id => document.getElementById(id);
 const money = v => Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -437,6 +617,32 @@ function openSupplierModal(){
   $('supplierModal').style.display = 'flex';
 }
 
+function registerSupplierFromNfe(){
+  if (!importedNfe) return;
+
+  const s = importedNfe.supplier || {};
+
+  $('newSupplierName').value = s.name || '';
+  $('newSupplierDoc').value = s.doc || '';
+  $('newSupplierIe').value = s.ie || '';
+  $('newSupplierContact').value = '';
+  $('newSupplierPhone').value = '';
+  $('newSupplierEmail').value = '';
+  $('newSupplierCity').value = '';
+  $('newSupplierUf').value = '';
+  $('newSupplierTerm').value = '';
+  $('newSupplierPayment').value = '';
+  $('newSupplierNotes').value =
+    importedNfe.key
+      ? `Fornecedor importado da NF-e ${importedNfe.number || ''} · Chave ${importedNfe.key}`
+      : `Fornecedor importado da NF-e ${importedNfe.number || ''}`;
+
+  xmlSupplierPending = true;
+  closeNfeModal();
+  $('supplierModal').style.display = 'flex';
+}
+
+
 function closeSupplierModal(){
   $('supplierModal').style.display = 'none';
 }
@@ -489,6 +695,25 @@ async function saveSupplier(){
 
     closeSupplierModal();
 
+    if (xmlSupplierPending && importedNfe) {
+      importedNfe.supplierMatched = {
+        id: supplier.id || '',
+        name: supplier.name || '',
+        doc: supplier.doc || '',
+        contact: supplier.contact || '',
+        phone: supplier.phone || '',
+        city: supplier.city || '',
+        state: supplier.state || ''
+      };
+
+      xmlSupplierPending = false;
+
+      setTimeout(() => {
+        renderNfeReview();
+        $('nfeModal').style.display = 'flex';
+      }, 80);
+    }
+
     toast(
       supplier.existing
         ? 'Esse fornecedor já estava cadastrado e foi selecionado.'
@@ -503,6 +728,763 @@ async function saveSupplier(){
     $('saveSupplierBtn').textContent = 'Salvar fornecedor';
   }
 }
+
+
+function selectNfeXml(){
+  $('nfeXmlFile').value = '';
+  $('nfeXmlFile').click();
+}
+
+
+async function handleNfeXmlFile(event){
+  const file =
+    event.target.files &&
+    event.target.files[0];
+
+  if (!file) return;
+
+  if (!file.name.toLowerCase().endsWith('.xml')) {
+    toast('Selecione o arquivo XML da NF-e.');
+    return;
+  }
+
+  try {
+    const text = await file.text();
+
+    importedNfe = parseNfeXml(text);
+
+    $('nfeProgress').textContent =
+      'Lendo fornecedor e procurando correspondências dos produtos...';
+
+    $('nfeModal').style.display = 'flex';
+    renderNfeReview();
+
+    await matchImportedNfe();
+
+    $('nfeProgress').textContent =
+      'Leitura concluída. Confira os vínculos antes de continuar.';
+
+    renderNfeReview();
+
+  } catch(err) {
+    importedNfe = null;
+    closeNfeModal();
+    toast(err.message || String(err));
+  }
+}
+
+
+function xmlFirst(parent, tag){
+  if (!parent) return null;
+
+  const byNs =
+    parent.getElementsByTagNameNS
+      ? parent.getElementsByTagNameNS('*', tag)
+      : [];
+
+  if (byNs && byNs.length) {
+    return byNs[0];
+  }
+
+  const regular =
+    parent.getElementsByTagName(tag);
+
+  return regular && regular.length
+    ? regular[0]
+    : null;
+}
+
+
+function xmlText(parent, tag){
+  const el = xmlFirst(parent, tag);
+
+  return el
+    ? String(el.textContent || '').trim()
+    : '';
+}
+
+
+function xmlNumber(value){
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+    return 0;
+  }
+
+  return Number(
+    String(value)
+      .trim()
+      .replace(',', '.')
+  ) || 0;
+}
+
+
+function cleanDocument(value){
+  return String(value || '')
+    .replace(/\D/g, '');
+}
+
+
+function normalizedText(value){
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+
+function parseNfeXml(text){
+  const parser =
+    new DOMParser();
+
+  const xml =
+    parser.parseFromString(
+      text,
+      'application/xml'
+    );
+
+  if (
+    xml.getElementsByTagName('parsererror').length
+  ) {
+    throw new Error(
+      'O arquivo não pôde ser lido como XML.'
+    );
+  }
+
+  const infNFe =
+    xmlFirst(xml, 'infNFe');
+
+  if (!infNFe) {
+    throw new Error(
+      'Não encontrei os dados de uma NF-e neste XML.'
+    );
+  }
+
+  const ide =
+    xmlFirst(infNFe, 'ide');
+
+  const emit =
+    xmlFirst(infNFe, 'emit');
+
+  const total =
+    xmlFirst(infNFe, 'ICMSTot');
+
+  const number =
+    xmlText(ide, 'nNF');
+
+  const series =
+    xmlText(ide, 'serie');
+
+  const emissionRaw =
+    xmlText(ide, 'dhEmi') ||
+    xmlText(ide, 'dEmi');
+
+  const date =
+    emissionRaw
+      ? emissionRaw.substring(0, 10)
+      : '';
+
+  const key =
+    String(
+      infNFe.getAttribute('Id') || ''
+    ).replace(/^NFe/i, '');
+
+  const supplier = {
+    name:
+      xmlText(emit, 'xNome'),
+
+    doc:
+      xmlText(emit, 'CNPJ') ||
+      xmlText(emit, 'CPF'),
+
+    ie:
+      xmlText(emit, 'IE')
+  };
+
+  const dets =
+    infNFe.getElementsByTagNameNS
+      ? infNFe.getElementsByTagNameNS('*', 'det')
+      : infNFe.getElementsByTagName('det');
+
+  const items = [];
+
+  for (
+    let i = 0;
+    i < dets.length;
+    i++
+  ) {
+    const prod =
+      xmlFirst(dets[i], 'prod');
+
+    if (!prod) continue;
+
+    const qty =
+      xmlNumber(
+        xmlText(prod, 'qCom')
+      );
+
+    const totalItem =
+      xmlNumber(
+        xmlText(prod, 'vProd')
+      );
+
+    let unitCost =
+      xmlNumber(
+        xmlText(prod, 'vUnCom')
+      );
+
+    if (
+      !unitCost &&
+      qty > 0 &&
+      totalItem > 0
+    ) {
+      unitCost =
+        totalItem / qty;
+    }
+
+    let gtin =
+      xmlText(prod, 'cEAN');
+
+    if (
+      normalizedText(gtin) === 'sem gtin'
+    ) {
+      gtin = '';
+    }
+
+    items.push({
+      nItem:
+        dets[i].getAttribute('nItem') ||
+        String(i + 1),
+
+      supplierCode:
+        xmlText(prod, 'cProd'),
+
+      gtin,
+
+      description:
+        xmlText(prod, 'xProd'),
+
+      unit:
+        xmlText(prod, 'uCom'),
+
+      qty,
+
+      unitCost,
+
+      total:
+        totalItem || qty * unitCost,
+
+      matchedProduct: null
+    });
+  }
+
+  if (!items.length) {
+    throw new Error(
+      'A NF-e não possui itens de produto para importar.'
+    );
+  }
+
+  return {
+    number,
+    series,
+    date,
+    key,
+
+    freight:
+      xmlNumber(
+        xmlText(total, 'vFrete')
+      ),
+
+    supplier,
+    supplierMatched: null,
+    items
+  };
+}
+
+
+async function matchImportedNfe(){
+  if (!importedNfe) return;
+
+  importedNfe.supplierMatched =
+    await matchNfeSupplier(
+      importedNfe.supplier
+    );
+
+  const matches =
+    await Promise.all(
+      importedNfe.items.map(
+        item =>
+          matchNfeProduct(item)
+            .catch(() => null)
+      )
+    );
+
+  matches.forEach(
+    (product, index) => {
+      importedNfe.items[index].matchedProduct =
+        product;
+    }
+  );
+}
+
+
+async function matchNfeSupplier(supplier){
+  const queries = [];
+
+  if (supplier.name) {
+    queries.push(supplier.name);
+  }
+
+  if (
+    supplier.doc &&
+    supplier.doc.length >= 2
+  ) {
+    queries.push(supplier.doc);
+  }
+
+  const wantedDoc =
+    cleanDocument(supplier.doc);
+
+  for (const q of queries) {
+    try {
+      const data =
+        await apiGet(
+          'suppliers',
+          {q},
+          12000
+        );
+
+      const list =
+        (data.fornecedores || [])
+          .map(f => ({
+            id: f.id || '',
+            name: f.nome || '',
+            doc: f.documento || '',
+            contact: f.contato || '',
+            phone: f.telefone || '',
+            city: f.cidade || '',
+            state: f.uf || ''
+          }));
+
+      if (wantedDoc) {
+        const exactDoc =
+          list.find(
+            f =>
+              cleanDocument(f.doc) ===
+              wantedDoc
+          );
+
+        if (exactDoc) {
+          return exactDoc;
+        }
+      }
+
+      const exactName =
+        list.find(
+          f =>
+            normalizedText(f.name) ===
+            normalizedText(supplier.name)
+        );
+
+      if (exactName) {
+        return exactName;
+      }
+
+    } catch(e) {}
+  }
+
+  return null;
+}
+
+
+function normalizeApiProducts(data){
+  return (data.produtos || []).map(p => ({
+    sku: p.sku || '',
+    barcode: p.codigoBarras || '',
+    name: p.nome || '',
+    unit: p.unidade || '',
+    cost: Number(p.custo || 0),
+    price: Number(p.preco || 0),
+    currentStock: Number(
+      p.estoqueFisico !== undefined
+        ? p.estoqueFisico
+        : p.estoque || 0
+    )
+  }));
+}
+
+
+async function matchNfeProduct(item){
+  const queries = [];
+
+  if (
+    item.gtin &&
+    item.gtin.length >= 2
+  ) {
+    queries.push({
+      value: item.gtin,
+      type: 'gtin'
+    });
+  }
+
+  if (
+    item.supplierCode &&
+    item.supplierCode.length >= 2
+  ) {
+    queries.push({
+      value: item.supplierCode,
+      type: 'code'
+    });
+  }
+
+  if (
+    item.description &&
+    item.description.length >= 2
+  ) {
+    queries.push({
+      value: item.description,
+      type: 'name'
+    });
+  }
+
+  for (const query of queries) {
+    try {
+      const data =
+        await apiGet(
+          'products',
+          {q: query.value},
+          12000
+        );
+
+      if (!data.ok) continue;
+
+      const products =
+        normalizeApiProducts(data);
+
+      if (!products.length) {
+        continue;
+      }
+
+      if (query.type === 'gtin') {
+        const target =
+          cleanDocument(item.gtin);
+
+        const exact =
+          products.find(
+            p =>
+              cleanDocument(p.barcode) ===
+              target
+          );
+
+        if (exact) return exact;
+      }
+
+      if (query.type === 'code') {
+        const target =
+          String(
+            item.supplierCode || ''
+          ).trim().toUpperCase();
+
+        const exact =
+          products.find(
+            p =>
+              String(
+                p.sku || ''
+              ).trim().toUpperCase() ===
+              target
+          );
+
+        if (exact) return exact;
+      }
+
+      if (query.type === 'name') {
+        const exact =
+          products.find(
+            p =>
+              normalizedText(p.name) ===
+              normalizedText(item.description)
+          );
+
+        if (exact) return exact;
+      }
+
+    } catch(e) {}
+  }
+
+  return null;
+}
+
+
+function renderNfeReview(){
+  if (!importedNfe) return;
+
+  const nfe = importedNfe;
+
+  $('nfeDocInfo').innerHTML = `
+    <div><b>Número:</b> ${esc(nfe.number || '-')}</div>
+    <div><b>Série:</b> ${esc(nfe.series || '-')}</div>
+    <div><b>Emissão:</b> ${esc(nfe.date || '-')}</div>
+    <div><b>Frete:</b> ${money(nfe.freight)}</div>
+  `;
+
+  $('nfeSupplierInfo').innerHTML = `
+    <div>${esc(nfe.supplier.name || '-')}</div>
+    <div class="helper">${esc(nfe.supplier.doc || 'Sem CNPJ/CPF no XML')}</div>
+  `;
+
+  if (nfe.supplierMatched) {
+    $('nfeSupplierStatus').innerHTML =
+      `<span class="nfe-status nfe-ok">Vinculado a ${esc(nfe.supplierMatched.name)}</span>`;
+
+    $('nfeRegisterSupplierBtn').style.display =
+      'none';
+
+  } else {
+    $('nfeSupplierStatus').innerHTML =
+      `<span class="nfe-status nfe-warn">Fornecedor ainda não cadastrado/vinculado</span>`;
+
+    $('nfeRegisterSupplierBtn').style.display =
+      'inline-block';
+  }
+
+  $('nfeItems').innerHTML =
+    nfe.items.map(
+      (item, index) => {
+        const match =
+          item.matchedProduct;
+
+        return `
+          <tr>
+            <td>
+              <div class="nfe-item-desc">${esc(item.description || '-')}</div>
+              <div class="nfe-item-meta">
+                Cód. fornecedor: ${esc(item.supplierCode || '-')}
+                ${item.gtin ? ' · GTIN ' + esc(item.gtin) : ''}
+                ${item.unit ? ' · ' + esc(item.unit) : ''}
+              </div>
+            </td>
+
+            <td>${Number(item.qty || 0)}</td>
+
+            <td>${money(item.unitCost)}</td>
+
+            <td>
+              ${
+                match
+                  ? `
+                    <div class="nfe-match">✓ ${esc(match.name)}</div>
+                    <div class="nfe-item-meta">SKU ${esc(match.sku)}</div>
+                  `
+                  : `
+                    <div class="nfe-unmatched">⚠ Não reconhecido</div>
+                  `
+              }
+            </td>
+
+            <td>
+              <button
+                class="btn btn-light"
+                style="padding:8px 10px;font-size:11px"
+                onclick="beginXmlProductLink(${index})"
+              >
+                ${match ? 'Trocar vínculo' : 'Vincular'}
+              </button>
+            </td>
+          </tr>
+        `;
+      }
+    ).join('');
+
+  const missingItems =
+    nfe.items.filter(
+      item => !item.matchedProduct
+    ).length;
+
+  const canApply =
+    !!nfe.supplierMatched &&
+    missingItems === 0;
+
+  $('nfeApplyBtn').disabled =
+    !canApply;
+
+  if (missingItems) {
+    $('nfeProgress').textContent =
+      `${missingItems} produto(s) ainda precisam ser vinculados.`;
+  } else if (!nfe.supplierMatched) {
+    $('nfeProgress').textContent =
+      'Os produtos foram reconhecidos, mas o fornecedor ainda precisa ser vinculado.';
+  } else {
+    $('nfeProgress').textContent =
+      'NF-e pronta para importar. Confira os dados e clique em “Usar dados da NF-e”.';
+  }
+}
+
+
+function beginXmlProductLink(index){
+  if (!importedNfe) return;
+
+  const item =
+    importedNfe.items[index];
+
+  if (!item) return;
+
+  xmlLinkTargetIndex =
+    index;
+
+  closeNfeModal();
+
+  $('productSearch').value =
+    item.description || item.supplierCode || '';
+
+  $('productSearch').focus();
+
+  if (
+    $('productSearch').value.trim().length >= 2
+  ) {
+    searchProducts(
+      $('productSearch').value.trim()
+    );
+  }
+
+  toast(
+    'Selecione no campo de produtos o item correspondente a esta linha da NF-e.'
+  );
+}
+
+
+function applyNfeImport(){
+  if (!importedNfe) return;
+
+  const nfe =
+    importedNfe;
+
+  if (!nfe.supplierMatched) {
+    toast(
+      'Vincule ou cadastre o fornecedor antes de continuar.'
+    );
+    return;
+  }
+
+  const missing =
+    nfe.items.filter(
+      item => !item.matchedProduct
+    );
+
+  if (missing.length) {
+    toast(
+      'Ainda existem produtos da NF-e sem vínculo.'
+    );
+    return;
+  }
+
+  if (
+    cart.length &&
+    !confirm(
+      'Já existem itens nesta entrada. Deseja substituí-los pelos itens da NF-e?'
+    )
+  ) {
+    return;
+  }
+
+  chooseSupplier(
+    nfe.supplierMatched
+  );
+
+  if (nfe.date) {
+    $('purchaseDate').value =
+      nfe.date;
+  }
+
+  $('documentNumber').value =
+    `NF-e ${nfe.number || ''}` +
+    (
+      nfe.series
+        ? ` / Série ${nfe.series}`
+        : ''
+    );
+
+  $('freight').value =
+    Number(
+      nfe.freight || 0
+    ).toFixed(2);
+
+  if (
+    !$('notes').value.trim()
+  ) {
+    $('notes').value =
+      nfe.key
+        ? `NF-e importada · Chave: ${nfe.key}`
+        : 'NF-e importada via XML';
+  }
+
+  cart =
+    nfe.items.map(
+      item => ({
+        sku:
+          item.matchedProduct.sku,
+
+        name:
+          item.matchedProduct.name,
+
+        unit:
+          item.matchedProduct.unit ||
+          item.unit ||
+          '',
+
+        qty:
+          Number(item.qty || 0),
+
+        unitCost:
+          Number(item.unitCost || 0),
+
+        xmlDescription:
+          item.description || '',
+
+        supplierCode:
+          item.supplierCode || '',
+
+        gtin:
+          item.gtin || ''
+      })
+    );
+
+  $('nfeBanner').innerHTML =
+    `<strong>NF-e importada:</strong> ${esc(nfe.number || '-')} · ${nfe.items.length} item(ns) · ${esc(nfe.supplier.name || '')}`;
+
+  $('nfeBanner').style.display =
+    'block';
+
+  closeNfeModal();
+  renderCart();
+
+  toast(
+    'Dados da NF-e carregados. Confira e finalize a entrada.'
+  );
+}
+
+
+function closeNfeModal(){
+  $('nfeModal').style.display =
+    'none';
+}
+
+
+function clearNfeImport(){
+  importedNfe = null;
+  xmlLinkTargetIndex = null;
+  xmlSupplierPending = false;
+
+  $('nfeBanner').style.display =
+    'none';
+
+  $('nfeBanner').innerHTML =
+    '';
+}
+
 
 $('supplierSearch').addEventListener('input', e => {
   const q = e.target.value.trim();
@@ -531,7 +1513,9 @@ async function searchSuppliers(q){
       contact: f.contato || '',
       phone: f.telefone || '',
       city: f.cidade || '',
-      state: f.uf || ''
+      state: f.uf || '',
+      term: f.prazo || '',
+      payment: f.formaPagamento || ''
     }));
 
     renderSuppliers(fornecedores);
@@ -573,6 +1557,14 @@ function chooseSupplier(s){
   $('selectedSupplier').style.display = 'block';
   $('supplierResults').style.display = 'none';
   $('supplierSearch').value = s.name;
+
+  if (
+    s.payment &&
+    [...$('purchasePayment').options]
+      .some(o => o.value === s.payment)
+  ) {
+    $('purchasePayment').value = s.payment;
+  }
 }
 
 $('productSearch').addEventListener('input', e => {
@@ -641,6 +1633,26 @@ function renderProducts(products){
 }
 
 function chooseProduct(p){
+  if (xmlLinkTargetIndex !== null && importedNfe) {
+    const item = importedNfe.items[xmlLinkTargetIndex];
+
+    if (item) {
+      item.matchedProduct = p;
+    }
+
+    xmlLinkTargetIndex = null;
+    selectedProductData = null;
+
+    $('productResults').style.display = 'none';
+    $('productSearch').value = '';
+    $('selectedProduct').style.display = 'none';
+
+    renderNfeReview();
+    $('nfeModal').style.display = 'flex';
+    toast('Produto vinculado à NF-e.');
+    return;
+  }
+
   selectedProductData = p;
   $('productName').textContent = p.name;
   $('productMeta').textContent =
@@ -826,6 +1838,14 @@ async function finishPurchase(){
     freight: Number($('freight').value || 0),
     notes: $('notes').value.trim(),
     updateCost: $('updateCost').checked,
+    finance: {
+      generate: $('generatePayable').checked,
+      payment: $('purchasePayment').value,
+      installments: Number($('purchaseInstallments').value || 1),
+      firstDueDate: $('purchaseFirstDueDate').value,
+      intervalDays: Number($('purchaseIntervalDays').value || 0),
+      account: $('purchaseAccount').value
+    },
     items: cart.map(i => ({
       sku: i.sku,
       qty: Number(i.qty),
@@ -899,7 +1919,15 @@ function clearPurchase(){
   $('freight').value = '0';
   $('notes').value = '';
   $('updateCost').checked = false;
+  $('generatePayable').checked = true;
+  $('purchasePayment').value = 'Pix';
+  $('purchaseInstallments').value = '1';
+  $('purchaseIntervalDays').value = '0';
+  $('purchaseAccount').value = 'Banco';
+  $('purchaseFirstDueDate').value =
+    $('purchaseDate').value;
 
+  clearNfeImport();
   renderCart();
 }
 
@@ -933,6 +1961,9 @@ $('purchaseDate').value =
   today.getFullYear() + '-' +
   String(today.getMonth()+1).padStart(2,'0') + '-' +
   String(today.getDate()).padStart(2,'0');
+
+$('purchaseFirstDueDate').value =
+  $('purchaseDate').value;
 
 renderCart();
 
