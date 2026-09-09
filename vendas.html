@@ -307,7 +307,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 
 <main class="container">
 <section class="hero">
   <h1>Novo pedido</h1>
-  <p>Produtos e disponibilidade consultados diretamente no Google Sheets.</p>
+  <p>Produtos consultados diretamente no Google Sheets. Itens sem saldo podem ser vendidos sob encomenda.</p>
 </section>
 
 <div class="grid">
@@ -377,7 +377,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 
       <div><label>Preço de venda</label><input id="price" type="number" min="0" step="0.01"></div>
       <button class="btn btn-primary" onclick="addSelected()">Adicionar</button>
     </div>
-    <div class="helper">O estoque será validado novamente no momento de finalizar.</div>
+    <div class="helper">Itens sem saldo podem ser adicionados como Sob encomenda. A disponibilidade física será exigida na Separação/Faturamento.</div>
   </div>
 </div>
 </section>
@@ -961,7 +961,10 @@ function renderResults(products){
   box.innerHTML = products.map((p,i) => `
     <div class="result" data-i="${i}">
       <strong>${esc(p.name)}</strong>
-      <small>SKU ${esc(p.sku)} · ${money(p.price)} · Disponível: ${p.available} ${esc(p.unit || '')}</small>
+      <small>
+        SKU ${esc(p.sku)} · ${money(p.price)} ·
+        ${p.available > 0 ? 'Pronta entrega' : 'Sob encomenda'}
+      </small>
     </div>
   `).join('');
 
@@ -976,8 +979,12 @@ function chooseProduct(p){
   selected = p;
   $('selectedName').textContent = p.name;
   $('selectedMeta').textContent =
-    `SKU ${p.sku} · Preço tabela ${money(p.price)} · Estoque físico ${p.currentStock} · Reservado ${p.reserved}`;
-  $('selectedStock').textContent = `${p.available} ${p.unit || ''}`;
+    `SKU ${p.sku} · Preço tabela ${money(p.price)}`;
+
+  $('selectedStock').textContent =
+    p.available > 0
+      ? `Pronta entrega · ${p.available} ${p.unit || ''}`
+      : 'Sob encomenda';
   $('price').value = Number(p.price || 0).toFixed(2);
   $('qty').value = 1;
   $('documentProductName').value = p.name || '';
@@ -997,14 +1004,9 @@ function addSelected(){
   if (price < 0) return toast('Preço inválido.');
 
   const existing = cart.find(x => x.sku === selected.sku);
-  const already = existing ? Number(existing.qty) : 0;
 
-  if (already + qty > Number(selected.available)) {
-    return toast(
-      `Disponível: ${selected.available}. Já no carrinho: ${already}.`
-    );
-  }
-
+  // Pedido aberto pode ser criado mesmo sem saldo físico.
+  // Itens sem saldo serão tratados como Sob encomenda.
   const documentName =
     $('documentProductName').value.trim() ||
     selected.name;
@@ -1070,7 +1072,9 @@ function renderCart(){
         <div>
           <strong>${esc(i.documentName || i.name)}</strong>
           <div class="meta">
-            Ref. ${esc(i.documentRef || i.sku)} · SKU ${esc(i.sku)} · ${i.qty} ${esc(i.unit || '')} × ${money(i.price)}
+            Ref. ${esc(i.documentRef || i.sku)} · SKU ${esc(i.sku)} ·
+            ${i.qty} ${esc(i.unit || '')} × ${money(i.price)}
+            ${Number(i.available || 0) <= 0 ? ' · Sob encomenda' : ''}
           </div>
         </div>
         <div class="price">
