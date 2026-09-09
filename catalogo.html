@@ -126,6 +126,94 @@ button{cursor:pointer}
   grid-template-columns:2fr 1fr auto;
   gap:9px;
   margin-bottom:17px;
+  align-items:start;
+}
+.category-picker{
+  position:relative;
+}
+.category-trigger{
+  width:100%;
+  min-height:44px;
+  border:1px solid #ccd7e0;
+  border-radius:11px;
+  padding:10px 12px;
+  background:#fff;
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  text-align:left;
+  font-size:12px;
+}
+.category-trigger strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.category-trigger span{
+  color:var(--muted);
+  flex:0 0 auto;
+}
+.category-menu{
+  display:none;
+  position:absolute;
+  top:50px;
+  left:0;
+  right:0;
+  z-index:60;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:12px;
+  box-shadow:0 14px 35px rgba(0,26,51,.16);
+  overflow:hidden;
+}
+.category-menu.open{
+  display:block;
+}
+.category-actions{
+  display:flex;
+  gap:6px;
+  padding:9px;
+  border-bottom:1px solid var(--line);
+}
+.category-actions button{
+  flex:1;
+  border:0;
+  background:#edf2f6;
+  color:var(--navy);
+  border-radius:8px;
+  min-height:34px;
+  font-size:9px;
+  font-weight:800;
+}
+.category-options{
+  max-height:280px;
+  overflow:auto;
+  padding:6px 10px;
+}
+.category-option{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-height:37px;
+  padding:6px 2px;
+  color:#364b5b;
+  font-size:11px;
+  cursor:pointer;
+}
+.category-option input{
+  width:17px;
+  height:17px;
+  min-height:0;
+  flex:0 0 auto;
+}
+.category-apply{
+  padding:9px;
+  border-top:1px solid var(--line);
+}
+.category-apply .btn{
+  width:100%;
 }
 input,select,textarea{
   width:100%;
@@ -151,6 +239,7 @@ input:focus,select:focus,textarea:focus{
 }
 .btn-primary{background:var(--navy);color:#fff}
 .btn-green{background:var(--green);color:#fff}
+.btn-whatsapp{background:#25D366;color:#fff}
 .btn-light{background:#edf2f6;color:var(--navy)}
 .catalog-layout{
   display:grid;
@@ -296,7 +385,7 @@ input:focus,select:focus,textarea:focus{
 }
 .cart-item-row{
   display:grid;
-  grid-template-columns:75px 1fr auto;
+  grid-template-columns:85px 1fr auto;
   align-items:center;
   gap:7px;
   margin-top:7px;
@@ -426,6 +515,16 @@ textarea{min-height:86px;resize:vertical}
   font-size:12px;
   line-height:1.5;
 }
+.success-actions{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+.success-actions .btn{
+  min-width:170px;
+}
 .quote-id{
   margin:15px auto;
   background:#f1f5f8;
@@ -479,6 +578,16 @@ textarea{min-height:86px;resize:vertical}
   .hero h1{font-size:27px}
   .container{width:calc(100% - 20px);margin-top:14px;margin-bottom:85px}
   .toolbar{grid-template-columns:1fr}
+  .category-menu{
+    position:fixed;
+    left:10px;
+    right:10px;
+    top:88px;
+    max-height:calc(100vh - 110px);
+  }
+  .category-options{
+    max-height:calc(100vh - 230px);
+  }
   .catalog-layout{display:block}
   .products{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
   .cart-panel{
@@ -548,7 +657,8 @@ textarea{min-height:86px;resize:vertical}
     <h1>Encontre os produtos para o seu negócio</h1>
     <p>
       Escolha os itens, informe as quantidades e envie sua solicitação de orçamento.
-      Nossa equipe confirma as condições comerciais, disponibilidade e prazo antes do fechamento.
+      Os valores serão informados pela nossa equipe junto com as condições comerciais,
+      disponibilidade e prazo.
     </p>
 
     <div class="availability-help">
@@ -563,9 +673,27 @@ textarea{min-height:86px;resize:vertical}
   <div class="toolbar">
     <input id="search" placeholder="Buscar produto, marca, SKU...">
 
-    <select id="category">
-      <option value="">Todas as categorias</option>
-    </select>
+    <div class="category-picker">
+      <button id="categoryTrigger" class="category-trigger" type="button" onclick="toggleCategoryMenu()">
+        <strong id="categoryTriggerText">Todas as categorias</strong>
+        <span>▾</span>
+      </button>
+
+      <div id="categoryMenu" class="category-menu">
+        <div class="category-actions">
+          <button type="button" onclick="selectAllCategories()">Selecionar todas</button>
+          <button type="button" onclick="clearCategories()">Limpar</button>
+        </div>
+
+        <div id="categoryOptions" class="category-options"></div>
+
+        <div class="category-apply">
+          <button class="btn btn-primary" type="button" onclick="applyCategorySelection()">
+            Aplicar categorias
+          </button>
+        </div>
+      </div>
+    </div>
 
     <button class="btn btn-light" onclick="loadCatalog()">Atualizar catálogo</button>
   </div>
@@ -580,7 +708,7 @@ textarea{min-height:86px;resize:vertical}
       <div class="cart-head">
         <h2>Meu orçamento</h2>
         <p>
-          Adicione os produtos desejados. O envio não confirma a venda e não reserva mercadoria.
+          Adicione os produtos desejados. Os valores serão informados pela equipe Campello após o envio.
         </p>
         <button class="btn btn-light" style="display:none;margin-top:8px;width:100%" id="closeMobileCart" onclick="closeMobileCart()">
           Continuar escolhendo
@@ -592,17 +720,12 @@ textarea{min-height:86px;resize:vertical}
       </div>
 
       <div class="cart-total">
-        <div class="total-row">
-          <span>Subtotal</span>
-          <strong id="cartTotal">R$ 0,00</strong>
-        </div>
-
-        <button id="requestBtn" class="btn btn-green" onclick="openQuote()" disabled>
+<button id="requestBtn" class="btn btn-green" onclick="openQuote()" disabled>
           Solicitar orçamento
         </button>
 
         <div class="note">
-          Valores, disponibilidade, frete e prazo sujeitos à confirmação pela Campello Distribuição.
+          Valores, disponibilidade, frete, condições comerciais e prazo serão confirmados pela Campello Distribuição.
         </div>
       </div>
     </aside>
@@ -611,7 +734,7 @@ textarea{min-height:86px;resize:vertical}
 </main>
 
 <button id="mobileCart" class="mobile-cart" onclick="openMobileCart()">
-  Meu orçamento · <span id="mobileCartCount">0</span> item(ns) · <span id="mobileCartTotal">R$ 0,00</span>
+  Meu orçamento · <span id="mobileCartCount">0</span> item(ns)
 </button>
 
 <div id="quoteModal" class="modal">
@@ -626,8 +749,7 @@ textarea{min-height:86px;resize:vertical}
       <div class="modal-body">
         <div class="quote-summary">
           <strong id="quoteCount">0 item(ns)</strong>
-          <span> · </span>
-          <strong id="quoteTotal">R$ 0,00</strong>
+          <span> · Valores serão informados pela equipe Campello</span>
         </div>
 
         <div class="form-grid">
@@ -660,6 +782,14 @@ textarea{min-height:86px;resize:vertical}
             <label>UF</label>
             <input id="customerUf" maxlength="2" style="text-transform:uppercase">
           </div>
+
+          <div>
+            <label>Representante</label>
+            <select id="customerRepresentative">
+              <option value="">Nenhum</option>
+              <option value="Gladston Campello">Gladston Campello</option>
+            </select>
+          </div>
         </div>
 
         <div style="margin-top:10px">
@@ -678,11 +808,20 @@ textarea{min-height:86px;resize:vertical}
       <div class="check">✅</div>
       <h2>Orçamento enviado</h2>
       <p>
-        Sua solicitação foi registrada. A equipe Campello entrará em contato para confirmar
-        disponibilidade, condições comerciais e prazo.
+        Sua solicitação foi registrada. A equipe Campello entrará em contato para informar
+        os valores e confirmar disponibilidade, condições comerciais e prazo.
       </p>
       <div id="successQuoteId" class="quote-id"></div>
-      <button class="btn btn-primary" onclick="finishQuote()">Concluir</button>
+
+      <div class="success-actions">
+        <button class="btn btn-whatsapp" onclick="sendQuoteWhatsApp()">
+          Enviar pelo WhatsApp
+        </button>
+
+        <button class="btn btn-primary" onclick="finishQuote()">
+          Concluir
+        </button>
+      </div>
     </div>
 
   </div>
@@ -694,10 +833,18 @@ textarea{min-height:86px;resize:vertical}
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbxPZaI7aJJ8uLcTX8LtiePLsugCGTFsLFVAuGvsvLNz9BPqqlM2oKi-zU9HNkRWPCIitA/exec';
 
+let catalogAll = [];
 let catalog = [];
 let categories = [];
+let selectedCategories = new Set();
 let cart = {};
 let searchTimer = null;
+let lastQuoteResult = null;
+
+// Quando o número oficial for definido, preencher apenas com dígitos:
+// Ex.: '5531999999999'. Enquanto estiver vazio, abre o compartilhamento
+// do WhatsApp para o cliente escolher o contato.
+const WHATSAPP_ATENDIMENTO = '';
 
 const $ = id => document.getElementById(id);
 
@@ -783,20 +930,22 @@ async function loadCatalog(){
     '<div class="loading">Carregando catálogo...</div>';
 
   try{
-    const data = await apiGet('catalog',{
-      q:$('search').value.trim(),
-      category:$('category').value
-    },22000);
+    const data = await apiGet('catalog',{},22000);
 
     if(!data.ok){
       throw new Error(data.erro || 'Não foi possível carregar o catálogo.');
     }
 
-    catalog = data.produtos || [];
+    catalogAll = data.produtos || [];
     categories = data.categorias || [];
 
+    // Remove apenas seleções que não existem mais no catálogo.
+    selectedCategories = new Set(
+      [...selectedCategories].filter(c => categories.includes(c))
+    );
+
     renderCategories();
-    renderProducts();
+    applyFilters();
 
   }catch(err){
     $('products').innerHTML =
@@ -804,20 +953,113 @@ async function loadCatalog(){
   }
 }
 
+function normalizeSearch(value){
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase()
+    .trim();
+}
+
+function applyFilters(){
+  const term = normalizeSearch($('search').value);
+
+  catalog = catalogAll.filter(p => {
+    const matchesCategory =
+      selectedCategories.size === 0 ||
+      selectedCategories.has(p.categoria);
+
+    if(!matchesCategory) return false;
+
+    if(!term) return true;
+
+    const searchable = normalizeSearch([
+      p.sku,
+      p.codigoBarras,
+      p.nome,
+      p.categoria,
+      p.marca,
+      p.descricao
+    ].join(' '));
+
+    return searchable.includes(term);
+  });
+
+  renderProducts();
+  updateCategoryTrigger();
+}
+
 function renderCategories(){
-  const current = $('category').value;
+  $('categoryOptions').innerHTML =
+    categories.map((c,index) => `
+      <label class="category-option">
+        <input
+          type="checkbox"
+          value="${esc(c)}"
+          ${selectedCategories.has(c) ? 'checked' : ''}
+          onchange="toggleCategoryValue(this)"
+        >
+        <span>${esc(c)}</span>
+      </label>
+    `).join('');
 
-  const opts =
-    '<option value="">Todas as categorias</option>' +
-    categories.map(c =>
-      `<option value="${esc(c)}">${esc(c)}</option>`
-    ).join('');
+  updateCategoryTrigger();
+}
 
-  $('category').innerHTML = opts;
+function toggleCategoryMenu(){
+  $('categoryMenu').classList.toggle('open');
+}
 
-  if([...$('category').options].some(o => o.value === current)){
-    $('category').value = current;
+function toggleCategoryValue(input){
+  if(input.checked){
+    selectedCategories.add(input.value);
+  }else{
+    selectedCategories.delete(input.value);
   }
+  updateCategoryTrigger();
+}
+
+function selectAllCategories(){
+  selectedCategories = new Set(categories);
+
+  $('categoryOptions')
+    .querySelectorAll('input[type="checkbox"]')
+    .forEach(input => input.checked = true);
+
+  updateCategoryTrigger();
+}
+
+function clearCategories(){
+  selectedCategories.clear();
+
+  $('categoryOptions')
+    .querySelectorAll('input[type="checkbox"]')
+    .forEach(input => input.checked = false);
+
+  updateCategoryTrigger();
+}
+
+function applyCategorySelection(){
+  $('categoryMenu').classList.remove('open');
+  applyFilters();
+}
+
+function updateCategoryTrigger(){
+  const count = selectedCategories.size;
+
+  if(count === 0 || count === categories.length){
+    $('categoryTriggerText').textContent = 'Todas as categorias';
+    return;
+  }
+
+  if(count === 1){
+    $('categoryTriggerText').textContent =
+      [...selectedCategories][0];
+    return;
+  }
+
+  $('categoryTriggerText').textContent =
+    `${count} categorias selecionadas`;
 }
 
 function renderProducts(){
@@ -852,7 +1094,7 @@ function renderProducts(){
             ${esc(p.descricao || `Ref. ${p.sku}`)}
           </div>
 
-          <div class="price">${money(p.preco)}</div>
+          <div class="product-meta" style="margin-top:13px">Valor sob consulta</div>
 
           <div class="availability">
             <span class="badge ${isReady ? 'ready' : 'order'}">
@@ -898,7 +1140,7 @@ function jsSafe(value){
 }
 
 function addProduct(sku){
-  const product = catalog.find(p => p.sku === sku);
+  const product = catalogAll.find(p => p.sku === sku);
   if(!product){
     toast('Produto não encontrado.');
     return;
@@ -913,7 +1155,6 @@ function addProduct(sku){
     cart[sku] = {
       sku:product.sku,
       nome:product.nome,
-      preco:Number(product.preco || 0),
       unidade:product.unidade || '',
       disponibilidade:product.disponibilidade,
       prazo:product.prazo || '',
@@ -930,12 +1171,8 @@ function addProduct(sku){
 function renderCart(){
   const items = Object.values(cart);
   const totalQty = items.reduce((s,i)=>s+Number(i.qty||0),0);
-  const total = items.reduce((s,i)=>s+(Number(i.qty||0)*Number(i.preco||0)),0);
-
   $('topCartCount').textContent = totalQty;
   $('mobileCartCount').textContent = totalQty;
-  $('mobileCartTotal').textContent = money(total);
-  $('cartTotal').textContent = money(total);
   $('requestBtn').disabled = !items.length;
 
   if(!items.length){
@@ -958,7 +1195,7 @@ function renderCart(){
           onchange="changeQty('${jsSafe(i.sku)}',this.value)"
         >
 
-        <strong>${money(Number(i.qty)*Number(i.preco))}</strong>
+        <span class="leadtime">Quantidade</span>
 
         <button class="remove" onclick="removeItem('${jsSafe(i.sku)}')">
           Remover
@@ -1003,10 +1240,8 @@ function openQuote(){
   }
 
   const totalQty = items.reduce((s,i)=>s+Number(i.qty||0),0);
-  const total = items.reduce((s,i)=>s+(Number(i.qty||0)*Number(i.preco||0)),0);
 
   $('quoteCount').textContent = `${totalQty} item(ns)`;
-  $('quoteTotal').textContent = money(total);
 
   $('quoteFormArea').style.display = 'block';
   $('successArea').style.display = 'none';
@@ -1109,7 +1344,7 @@ async function sendQuote(){
   btn.textContent = 'Enviando...';
 
   try{
-    const result = await postQuote({
+    const quoteSnapshot = {
       customer:{
         name,
         whatsapp,
@@ -1118,12 +1353,29 @@ async function sendQuote(){
         city:$('customerCity').value.trim(),
         uf:$('customerUf').value.trim()
       },
+      representative:$('customerRepresentative').value,
       notes:$('customerNotes').value.trim(),
       items:Object.values(cart).map(i => ({
         sku:i.sku,
+        nome:i.nome,
         qty:Number(i.qty)
       }))
+    };
+
+    const result = await postQuote({
+      customer:quoteSnapshot.customer,
+      representative:quoteSnapshot.representative,
+      notes:quoteSnapshot.notes,
+      items:quoteSnapshot.items.map(i => ({
+        sku:i.sku,
+        qty:i.qty
+      }))
     });
+
+    lastQuoteResult = {
+      ...result,
+      snapshot:quoteSnapshot
+    };
 
     $('quoteFormArea').style.display = 'none';
     $('successArea').style.display = 'block';
@@ -1137,6 +1389,59 @@ async function sendQuote(){
     btn.textContent = 'Enviar solicitação';
   }
 }
+
+function sendQuoteWhatsApp(){
+  if(!lastQuoteResult){
+    toast('Não foi possível localizar os dados do orçamento enviado.');
+    return;
+  }
+
+  const snapshot = lastQuoteResult.snapshot || {};
+  const customer = snapshot.customer || {};
+  const items = snapshot.items || [];
+
+  const linhasItens = items.map(item =>
+    `• ${Number(item.qty || 0)}x ${item.nome}`
+  );
+
+  const mensagem = [
+    'Olá! Enviei uma solicitação de orçamento pelo catálogo da Campello Distribuição.',
+    '',
+    `Referência: ${lastQuoteResult.quoteId}`,
+    `Cliente: ${customer.name || '-'}`,
+    `WhatsApp: ${customer.whatsapp || '-'}`,
+    snapshot.representative
+      ? `Representante: ${snapshot.representative}`
+      : 'Representante: Nenhum',
+    '',
+    'Itens:',
+    ...linhasItens,
+    '',
+    'Valores: a confirmar pela Campello Distribuição',
+    snapshot.notes
+      ? `Observação: ${snapshot.notes}`
+      : '',
+    '',
+    'Aguardo a confirmação das condições comerciais, disponibilidade e prazo.'
+  ]
+    .filter(line => line !== '')
+    .join('\n');
+
+  const numero =
+    String(WHATSAPP_ATENDIMENTO || '')
+      .replace(/\D/g,'');
+
+  const url = numero
+    ? `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`
+    : `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+
+  window.open(
+    url,
+    '_blank',
+    'noopener,noreferrer'
+  );
+}
+
 
 function finishQuote(){
   cart = {};
@@ -1155,14 +1460,29 @@ function finishQuote(){
   ].forEach(id => {
     if($(id)) $(id).value = '';
   });
+
+  if($('customerRepresentative')){
+    $('customerRepresentative').value = '';
+  }
+
+  lastQuoteResult = null;
 }
 
 $('search').addEventListener('input',()=>{
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(loadCatalog,400);
+  searchTimer = setTimeout(applyFilters,250);
 });
 
-$('category').addEventListener('change',loadCatalog);
+document.addEventListener('click',e=>{
+  const picker = document.querySelector('.category-picker');
+
+  if(
+    picker &&
+    !picker.contains(e.target)
+  ){
+    $('categoryMenu').classList.remove('open');
+  }
+});
 
 $('quoteModal').addEventListener('click',e=>{
   if(e.target === $('quoteModal')) closeQuote();
