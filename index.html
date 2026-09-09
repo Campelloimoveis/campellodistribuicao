@@ -149,6 +149,7 @@ body {
   background:var(--navy);
 }
 
+.card.catalog:before { background:#6f42c1; }
 .card.sales:before { background:var(--red); }
 .card.orders:before { background:#24658f; }
 .card.purchase:before { background:var(--green); }
@@ -348,6 +349,28 @@ body {
   </div>
 
   <div class="grid">
+    <section class="card catalog">
+      <div class="card-head">
+        <div class="icon">🛍️</div>
+        <span class="badge badge-live">PÚBLICO</span>
+      </div>
+
+      <h3>Catálogo Interativo</h3>
+      <p>
+        Catálogo para o cliente consultar produtos, visualizar a disponibilidade
+        comercial e montar sua própria solicitação de orçamento.
+      </p>
+
+      <div class="tags">
+        <span class="tag">Pronta entrega</span>
+        <span class="tag">Sob encomenda</span>
+        <span class="tag">Orçamento online</span>
+      </div>
+
+      <a class="btn btn-primary" href="catalogo.html">Abrir Catálogo</a>
+    </section>
+
+
 
     <section class="card sales">
       <div class="card-head">
@@ -371,6 +394,7 @@ body {
       <a class="btn btn-primary" href="vendas.html">Abrir Vendas</a>
     </section>
 
+
     <section class="card orders">
       <div class="card-head">
         <div class="icon">📋</div>
@@ -392,6 +416,30 @@ body {
 
       <a class="btn btn-primary" href="pedidos.html">Abrir Pedidos</a>
     </section>
+
+
+    <section class="card finance">
+      <div class="card-head">
+        <div class="icon">💰</div>
+        <span class="badge badge-live">ATIVO</span>
+      </div>
+
+      <h3>Financeiro</h3>
+      <p>
+        Contas a receber, contas a pagar, baixas totais e parciais,
+        vencimentos, liquidações e fluxo financeiro.
+      </p>
+
+      <div class="tags">
+        <span class="tag">Receber</span>
+        <span class="tag">Pagar</span>
+        <span class="tag">Baixas</span>
+        <span class="tag">Vencidos</span>
+      </div>
+
+      <a class="btn btn-primary" href="financeiro.html">Abrir Financeiro</a>
+    </section>
+
 
     <section class="card purchase">
       <div class="card-head">
@@ -415,27 +463,6 @@ body {
       <a class="btn btn-green" href="compras.html">Abrir Compras</a>
     </section>
 
-    <section class="card finance">
-      <div class="card-head">
-        <div class="icon">💰</div>
-        <span class="badge badge-live">ATIVO</span>
-      </div>
-
-      <h3>Financeiro</h3>
-      <p>
-        Contas a receber, contas a pagar, baixas totais e parciais,
-        vencimentos, liquidações e fluxo financeiro.
-      </p>
-
-      <div class="tags">
-        <span class="tag">Receber</span>
-        <span class="tag">Pagar</span>
-        <span class="tag">Baixas</span>
-        <span class="tag">Vencidos</span>
-      </div>
-
-      <a class="btn btn-primary" href="financeiro.html">Abrir Financeiro</a>
-    </section>
 
     <section class="card stock">
       <div class="card-head">
