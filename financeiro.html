@@ -420,6 +420,102 @@ td.money,th.money{text-align:right}
   font-size:11px;
 }
 .history-item strong{color:var(--navy)}
+.payment-box{
+  margin-top:12px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  overflow:hidden;
+  background:#fff;
+}
+.payment-head{
+  display:grid;
+  grid-template-columns:1fr 140px 150px 40px;
+  gap:8px;
+  padding:8px 10px;
+  background:#f6f9fb;
+  border-bottom:1px solid var(--line);
+  font-size:9px;
+  font-weight:800;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+.payment-row{
+  display:grid;
+  grid-template-columns:1fr 140px 150px 40px;
+  gap:8px;
+  padding:8px 10px;
+  border-bottom:1px solid var(--line);
+  align-items:center;
+}
+.payment-row:last-child{border-bottom:0}
+.payment-row input,.payment-row select{width:100%}
+.payment-remove{
+  border:0;
+  background:#fff0f0;
+  color:#b42318;
+  width:34px;
+  height:34px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:900;
+}
+.payment-summary{
+  margin-top:8px;
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:8px;
+  padding:10px 12px;
+  border-radius:9px;
+  background:#f6f9fb;
+  font-size:10px;
+}
+.logged-user{
+  height:43px;
+  display:flex;
+  align-items:center;
+  padding:0 11px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#f6f9fb;
+  color:var(--navy);
+  font-weight:800;
+  font-size:11px;
+}
+.history-actions{
+  margin-top:8px;
+}
+.undo-btn{
+  border:0;
+  background:#fff1f2;
+  color:#a61b22;
+  border-radius:7px;
+  padding:6px 9px;
+  font-size:9px;
+  font-weight:800;
+  cursor:pointer;
+}
+.reversed-badge{
+  display:inline-flex;
+  padding:3px 6px;
+  border-radius:99px;
+  background:#f3f4f6;
+  color:#6b7280;
+  font-size:8px;
+  font-weight:800;
+  margin-left:6px;
+}
+.reversal-badge{
+  display:inline-flex;
+  padding:3px 6px;
+  border-radius:99px;
+  background:#fff1f2;
+  color:#a61b22;
+  font-size:8px;
+  font-weight:800;
+  margin-left:6px;
+}
+
 .history-meta{
   color:var(--muted);
   margin-top:4px;
@@ -488,6 +584,14 @@ td.money,th.money{text-align:right}
   .mobile-list{display:block}
   .detail-grid{grid-template-columns:1fr 1fr}
   .form-grid{grid-template-columns:1fr}
+  .payment-head{display:none}
+  .payment-row{
+    grid-template-columns:1fr 1fr;
+    padding:11px;
+  }
+  .payment-row .payment-method{grid-column:1/-1}
+  .payment-row .payment-remove{justify-self:end}
+
   .modal{
     padding:0;
     align-items:flex-end;
@@ -685,38 +789,50 @@ td.money,th.money{text-align:right}
       <div id="settlementForm">
         <div class="form-grid">
           <div>
-            <label id="amountLabel">Valor da baixa</label>
-            <input id="settlementAmount" type="number" min="0.01" step="0.01">
-          </div>
-
-          <div>
             <label>Data</label>
             <input id="settlementDate" type="date">
           </div>
 
           <div>
-            <label>Conta</label>
-            <select id="settlementAccount">
-              <option>Banco</option>
-              <option>Caixa</option>
-              <option>Cartão</option>
-              <option>Outro</option>
-            </select>
+            <label>Responsável</label>
+            <div id="settlementResponsible" class="logged-user">Usuário logado</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <label>Formas de pagamento</label>
+
+          <div class="payment-box">
+            <div class="payment-head">
+              <div>Forma de pagamento</div>
+              <div>Valor</div>
+              <div>Conta</div>
+              <div></div>
+            </div>
+
+            <div id="paymentRows"></div>
           </div>
 
-          <div>
-            <label>Responsável</label>
-            <input id="settlementResponsible" placeholder="Quem registrou a baixa">
+          <div style="margin-top:8px">
+            <button class="btn btn-light" type="button" onclick="addPaymentRow()">
+              + Adicionar forma de pagamento
+            </button>
+          </div>
+
+          <div class="payment-summary">
+            <span>Total informado: <strong id="paymentsTotal">R$ 0,00</strong></span>
+            <span>Saldo após baixa: <strong id="paymentsRemaining">R$ 0,00</strong></span>
           </div>
         </div>
 
         <div style="margin-top:10px">
           <label>Observação</label>
-          <textarea id="settlementNotes" placeholder="Ex.: PIX recebido, pagamento parcial, comprovante..."></textarea>
+          <textarea id="settlementNotes" placeholder="Ex.: comprovante, observação do recebimento..."></textarea>
         </div>
 
         <div class="helper" style="margin-top:8px">
-          Você pode baixar apenas uma parte do saldo. O restante continuará em aberto.
+          Você pode dividir a baixa entre Pix, Dinheiro, Cartão, Transferência etc.
+          Cada forma ficará registrada separadamente no histórico.
         </div>
       </div>
 
@@ -1238,6 +1354,215 @@ function renderFinance(){
     `).join('');
 }
 
+
+function paymentMethodOptions(selected=''){
+  const options = [
+    'Pix',
+    'Dinheiro',
+    'Boleto',
+    'Cartão',
+    'Transferência',
+    'Outro'
+  ];
+
+  return options.map(value => `
+    <option value="${esc(value)}" ${value === selected ? 'selected' : ''}>
+      ${esc(value)}
+    </option>
+  `).join('');
+}
+
+function paymentAccountOptions(selected=''){
+  const options = [
+    'Banco',
+    'Caixa',
+    'Cartão',
+    'Outro'
+  ];
+
+  return options.map(value => `
+    <option value="${esc(value)}" ${value === selected ? 'selected' : ''}>
+      ${esc(value)}
+    </option>
+  `).join('');
+}
+
+function suggestedAccount(method){
+  if(method === 'Dinheiro') return 'Caixa';
+  if(method === 'Cartão') return 'Cartão';
+  if(['Pix','Boleto','Transferência'].includes(method)) return 'Banco';
+  return 'Outro';
+}
+
+function addPaymentRow(amount=null,method=null,account=null){
+  if(!currentTitle) return;
+
+  const rows = document.querySelectorAll('.payment-row');
+  const already = [...rows].reduce(
+    (sum,row) =>
+      sum +
+      Number(
+        row.querySelector('.payment-amount').value || 0
+      ),
+    0
+  );
+
+  let initialAmount =
+    amount !== null
+      ? Number(amount)
+      : Math.max(
+          0,
+          Number(currentTitle.balance || 0) -
+          already
+        );
+
+  const initialMethod =
+    method ||
+    (
+      ['Pix','Dinheiro','Boleto','Cartão','Transferência','Outro']
+        .includes(currentTitle.paymentMethod)
+        ? currentTitle.paymentMethod
+        : 'Pix'
+    );
+
+  const initialAccount =
+    account ||
+    (
+      currentTitle.account ||
+      suggestedAccount(initialMethod)
+    );
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'payment-row';
+
+  wrapper.innerHTML = `
+    <div class="payment-method">
+      <select class="payment-method-select">
+        ${paymentMethodOptions(initialMethod)}
+      </select>
+    </div>
+
+    <div>
+      <input
+        class="payment-amount"
+        type="number"
+        min="0.01"
+        step="0.01"
+        value="${initialAmount > 0 ? initialAmount.toFixed(2) : ''}"
+      >
+    </div>
+
+    <div>
+      <select class="payment-account">
+        ${paymentAccountOptions(initialAccount)}
+      </select>
+    </div>
+
+    <div>
+      <button
+        class="payment-remove"
+        type="button"
+        title="Remover forma"
+        onclick="removePaymentRow(this)"
+      >×</button>
+    </div>
+  `;
+
+  $('paymentRows').appendChild(wrapper);
+
+  const methodSelect =
+    wrapper.querySelector('.payment-method-select');
+
+  methodSelect.addEventListener('change',()=>{
+    const accountSelect =
+      wrapper.querySelector('.payment-account');
+
+    accountSelect.value =
+      suggestedAccount(
+        methodSelect.value
+      );
+
+    updatePaymentsSummary();
+  });
+
+  wrapper
+    .querySelector('.payment-amount')
+    .addEventListener(
+      'input',
+      updatePaymentsSummary
+    );
+
+  wrapper
+    .querySelector('.payment-account')
+    .addEventListener(
+      'change',
+      updatePaymentsSummary
+    );
+
+  updatePaymentsSummary();
+}
+
+function removePaymentRow(button){
+  const rows =
+    document.querySelectorAll('.payment-row');
+
+  if(rows.length <= 1){
+    toast('A baixa precisa ter pelo menos uma forma de pagamento.');
+    return;
+  }
+
+  button.closest('.payment-row').remove();
+  updatePaymentsSummary();
+}
+
+function getPaymentRows(){
+  return [
+    ...document.querySelectorAll('.payment-row')
+  ].map(row => ({
+    method:
+      row.querySelector('.payment-method-select').value,
+    amount:
+      Number(
+        row.querySelector('.payment-amount').value || 0
+      ),
+    account:
+      row.querySelector('.payment-account').value
+  }));
+}
+
+function updatePaymentsSummary(){
+  const total =
+    getPaymentRows().reduce(
+      (sum,item) =>
+        sum +
+        Number(item.amount || 0),
+      0
+    );
+
+  const balance =
+    currentTitle
+      ? Number(currentTitle.balance || 0)
+      : 0;
+
+  $('paymentsTotal').textContent =
+    money(total);
+
+  $('paymentsRemaining').textContent =
+    money(
+      Math.max(
+        0,
+        balance -
+        total
+      )
+    );
+
+  $('paymentsTotal').style.color =
+    total > balance + 0.01
+      ? '#b42318'
+      : '';
+}
+
+
 async function openTitle(id){
   currentTitle =
     financeData.find(
@@ -1272,21 +1597,6 @@ async function openTitle(id){
       ? 'Registrar recebimento'
       : 'Registrar pagamento';
 
-  $('amountLabel').textContent =
-    currentTitle.type === 'Receber'
-      ? 'Valor recebido'
-      : 'Valor pago';
-
-  $('settlementAmount').value =
-    Number(
-      currentTitle.balance || 0
-    ).toFixed(2);
-
-  $('settlementAmount').max =
-    Number(
-      currentTitle.balance || 0
-    ).toFixed(2);
-
   const today = new Date();
 
   $('settlementDate').value =
@@ -1294,21 +1604,25 @@ async function openTitle(id){
     String(today.getMonth()+1).padStart(2,'0') + '-' +
     String(today.getDate()).padStart(2,'0');
 
-  const account =
-    currentTitle.account || 'Banco';
-
-  if(
-    [...$('settlementAccount').options]
-      .some(o => o.value === account)
-  ){
-    $('settlementAccount').value =
-      account;
-  }else{
-    $('settlementAccount').value =
-      'Outro';
-  }
+  $('settlementResponsible').textContent =
+    CURRENT_AUTH_USER && CURRENT_AUTH_USER.name
+      ? CURRENT_AUTH_USER.name
+      : 'Usuário logado';
 
   $('settlementNotes').value = '';
+
+  $('paymentRows').innerHTML = '';
+
+  addPaymentRow(
+    Number(
+      currentTitle.balance || 0
+    ),
+    ['Pix','Dinheiro','Boleto','Cartão','Transferência','Outro']
+      .includes(currentTitle.paymentMethod)
+      ? currentTitle.paymentMethod
+      : 'Pix',
+    currentTitle.account || null
+  );
 
   const liquidado =
     currentTitle.status === 'Liquidado';
@@ -1358,12 +1672,15 @@ async function loadHistory(titleId){
         <div class="history-item">
           <strong>
             ${esc(h.event)} · ${money(h.amount)}
+            ${h.reversed ? '<span class="reversed-badge">DESFEITA</span>' : ''}
+            ${h.isReversal ? '<span class="reversal-badge">ESTORNO</span>' : ''}
           </strong>
 
           <div>
             ${esc(h.date || '')}
+            ${h.paymentMethod ? ' · ' + esc(h.paymentMethod) : ''}
             ${h.account ? ' · ' + esc(h.account) : ''}
-            ${h.responsible ? ' · ' + esc(h.responsible) : ''}
+            ${h.responsible ? ' · por ' + esc(h.responsible) : ''}
           </div>
 
           <div class="history-meta">
@@ -1374,6 +1691,16 @@ async function loadHistory(titleId){
             ? `<div class="history-meta">${esc(h.notes)}</div>`
             : ''
           }
+
+          ${
+            !h.isReversal && !h.reversed
+              ? `<div class="history-actions">
+                   <button class="undo-btn" onclick="undoSettlement('${jsSafe(h.id)}')">
+                     Desfazer baixa
+                   </button>
+                 </div>`
+              : ''
+          }
         </div>
       `).join('');
 
@@ -1382,6 +1709,164 @@ async function loadHistory(titleId){
       'Não foi possível carregar o histórico.';
   }
 }
+
+
+function submitSettlementUndo(payload){
+  return new Promise((resolve,reject)=>{
+    const requestId =
+      uniqueId();
+
+    payload.kind =
+      'financeSettlementUndo';
+
+    payload.requestId =
+      requestId;
+
+    payload.authToken =
+      getAuthToken();
+
+    const form =
+      document.createElement('form');
+
+    form.method = 'POST';
+    form.action = API_URL;
+    form.target = 'apiPostFrame';
+    form.style.display = 'none';
+
+    const data =
+      document.createElement('input');
+
+    data.type = 'hidden';
+    data.name = 'payload';
+    data.value =
+      JSON.stringify(payload);
+
+    form.appendChild(data);
+    document.body.appendChild(form);
+    form.submit();
+
+    setTimeout(
+      () => form.remove(),
+      1500
+    );
+
+    const started =
+      Date.now();
+
+    const poll =
+      async () => {
+        if(
+          Date.now() - started >
+          25000
+        ){
+          reject(
+            new Error(
+              'O estorno pode ter sido gravado, mas a confirmação demorou. Atualize o financeiro.'
+            )
+          );
+          return;
+        }
+
+        try{
+          const status =
+            await apiGet(
+              'financeSettlementUndoStatus',
+              {requestId},
+              8000
+            );
+
+          if(status.pending){
+            setTimeout(
+              poll,
+              700
+            );
+            return;
+          }
+
+          if(!status.ok){
+            reject(
+              new Error(
+                status.erro ||
+                'Não foi possível desfazer a baixa.'
+              )
+            );
+            return;
+          }
+
+          resolve(
+            status.result
+          );
+
+        }catch(err){
+          setTimeout(
+            poll,
+            900
+          );
+        }
+      };
+
+    setTimeout(
+      poll,
+      700
+    );
+  });
+}
+
+async function undoSettlement(movementId){
+  if(!currentTitle){
+    return;
+  }
+
+  const ok = confirm(
+    'Desfazer esta baixa?\n\n' +
+    'O valor voltará para o saldo do título e o histórico será preservado como estorno.'
+  );
+
+  if(!ok){
+    return;
+  }
+
+  try{
+    const result =
+      await submitSettlementUndo({
+        movementId,
+        notes:'Baixa desfeita pela interface do Financeiro'
+      });
+
+    toast(
+      `Baixa de ${money(result.amount)} desfeita por ${result.responsible}.`
+    );
+
+    await loadFinance();
+
+    currentTitle =
+      financeData.find(
+        t =>
+          t.id ===
+          currentTitle.id
+      ) ||
+      currentTitle;
+
+    if(currentTitle){
+      $('modalPaid').textContent =
+        money(currentTitle.paid);
+
+      $('modalBalance').textContent =
+        money(currentTitle.balance);
+
+      await loadHistory(
+        currentTitle.id
+      );
+    }
+
+  }catch(err){
+    toast(
+      err.message ||
+      String(err)
+    );
+  }
+}
+
 
 function closeSettlement(){
   $('settlementModal').style.display =
@@ -1400,6 +1885,9 @@ function submitSettlement(payload){
 
     payload.requestId =
       requestId;
+
+    payload.authToken =
+      getAuthToken();
 
     const form =
       document.createElement('form');
@@ -1502,23 +1990,58 @@ async function confirmSettlement(){
     return;
   }
 
-  const amount =
-    Number(
-      $('settlementAmount').value || 0
-    );
+  const payments =
+    getPaymentRows()
+      .filter(
+        item =>
+          Number(
+            item.amount || 0
+          ) > 0
+      );
 
-  if(amount <= 0){
-    toast('Informe o valor da baixa.');
+  if(!payments.length){
+    toast(
+      'Informe pelo menos uma forma de pagamento.'
+    );
     return;
   }
 
+  const total =
+    payments.reduce(
+      (sum,item) =>
+        sum +
+        Number(
+          item.amount || 0
+        ),
+      0
+    );
+
   if(
-    amount >
-    Number(currentTitle.balance || 0) +
+    total >
+    Number(
+      currentTitle.balance || 0
+    ) +
     0.01
   ){
     toast(
-      'O valor não pode ser maior que o saldo do título.'
+      'A soma das formas de pagamento não pode ser maior que o saldo do título.'
+    );
+    return;
+  }
+
+  const invalid =
+    payments.some(
+      item =>
+        !item.method ||
+        !item.account ||
+        Number(
+          item.amount || 0
+        ) <= 0
+    );
+
+  if(invalid){
+    toast(
+      'Confira forma, valor e conta de todos os pagamentos.'
     );
     return;
   }
@@ -1533,16 +2056,17 @@ async function confirmSettlement(){
   try{
     const result =
       await submitSettlement({
-        titleId:currentTitle.id,
-        amount,
-        date:$('settlementDate').value,
-        account:$('settlementAccount').value,
-        responsible:$('settlementResponsible').value.trim(),
-        notes:$('settlementNotes').value.trim()
+        titleId:
+          currentTitle.id,
+        payments,
+        date:
+          $('settlementDate').value,
+        notes:
+          $('settlementNotes').value.trim()
       });
 
     toast(
-      `${result.settlementType} de ${money(result.amount)} registrado.`
+      `${result.settlementType} de ${money(result.amount)} registrado por ${result.responsible}.`
     );
 
     closeSettlement();
@@ -1551,7 +2075,8 @@ async function confirmSettlement(){
 
   }catch(err){
     toast(
-      err.message || String(err)
+      err.message ||
+      String(err)
     );
 
   }finally{
