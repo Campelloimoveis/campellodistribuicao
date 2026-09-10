@@ -419,6 +419,22 @@
         height:56px;
       }
     }
+  
+    .setup-only{display:none}
+    body.setup-mode .setup-only{display:block}
+    body.setup-mode .login-only{display:none}
+    .setup-note{
+      background:#eef5fb;
+      border:1px solid #d4e3f1;
+      color:#536a80;
+      padding:11px 13px;
+      border-radius:9px;
+      font-size:12px;
+      line-height:1.45;
+      margin-bottom:20px;
+    }
+    .login-btn:disabled{opacity:.65;cursor:wait;transform:none}
+
   </style>
 </head>
 
@@ -456,6 +472,26 @@
         <div id="loginError" class="error" role="alert"></div>
 
         <form id="loginForm" autocomplete="on">
+
+          <div class="setup-only">
+            <div class="setup-note">
+              Primeiro acesso: crie o usuário Administrativo principal da intranet.
+              Depois os demais acessos serão cadastrados pelo painel de usuários.
+            </div>
+
+            <div class="field">
+              <label for="nomeAdmin">Nome</label>
+              <div class="input-wrap">
+                <input
+                  id="nomeAdmin"
+                  type="text"
+                  placeholder="Nome do administrativo"
+                  style="padding:0 16px"
+                >
+              </div>
+            </div>
+          </div>
+
           <div class="field">
             <label for="usuario">Usuário</label>
             <div class="input-wrap">
@@ -514,7 +550,19 @@
             </div>
           </div>
 
-          <div class="options">
+          <div class="field setup-only">
+            <label for="confirmarSenha">Confirmar senha</label>
+            <div class="input-wrap">
+              <input
+                id="confirmarSenha"
+                type="password"
+                placeholder="Digite a senha novamente"
+                style="padding:0 16px"
+              >
+            </div>
+          </div>
+
+          <div class="options login-only">
             <label class="remember">
               <input id="lembrar" type="checkbox">
               <span>Lembrar de mim</span>
@@ -523,7 +571,7 @@
             <a href="#" id="forgotLink">Esqueceu a senha?</a>
           </div>
 
-          <button class="login-btn" type="submit">
+          <button id="submitLoginBtn" class="login-btn" type="submit">
             Entrar
           </button>
         </form>
@@ -545,11 +593,183 @@
     </section>
   </main>
 
+  <iframe name="apiPostFrame" style="display:none"></iframe>
+
   <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxPZaI7aJJ8uLcTX8LtiePLsugCGTFsLFVAuGvsvLNz9BPqqlM2oKi-zU9HNkRWPCIitA/exec';
+    const TOKEN_KEY = 'campello_auth_token';
+    const USER_KEY = 'campello_auth_user';
+
     const loginForm = document.getElementById('loginForm');
     const passwordInput = document.getElementById('senha');
     const togglePassword = document.getElementById('togglePassword');
     const loginError = document.getElementById('loginError');
+    const submitBtn = document.getElementById('submitLoginBtn');
+    const title = document.querySelector('.title h1');
+
+    let setupMode = false;
+
+    function uniqueId(){
+      if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      return 'req-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    }
+
+    function apiGet(action, params={}, timeout=12000){
+      return new Promise((resolve,reject)=>{
+        const callback =
+          '__campello_auth_' +
+          Date.now() +
+          '_' +
+          Math.random().toString(36).slice(2);
+
+        const script = document.createElement('script');
+        const query = new URLSearchParams({
+          action,
+          callback,
+          _:String(Date.now()),
+          ...params
+        });
+
+        const timer = setTimeout(()=>{
+          cleanup();
+          reject(new Error('A comunicação com a intranet demorou para responder.'));
+        },timeout);
+
+        function cleanup(){
+          clearTimeout(timer);
+          script.remove();
+          try{ delete window[callback]; }catch(e){}
+        }
+
+        window[callback] = data => {
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error('Não foi possível acessar o servidor da Campello.'));
+        };
+
+        script.src = API_URL + '?' + query.toString();
+        document.body.appendChild(script);
+      });
+    }
+
+    function submitAuth(kind,payload,statusAction){
+      return new Promise((resolve,reject)=>{
+        const requestId = uniqueId();
+        payload.kind = kind;
+        payload.requestId = requestId;
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = API_URL;
+        form.target = 'apiPostFrame';
+        form.style.display = 'none';
+
+        const data = document.createElement('input');
+        data.type = 'hidden';
+        data.name = 'payload';
+        data.value = JSON.stringify(payload);
+
+        form.appendChild(data);
+        document.body.appendChild(form);
+        form.submit();
+
+        setTimeout(()=>form.remove(),1200);
+
+        const started = Date.now();
+
+        const poll = async () => {
+          if(Date.now() - started > 35000){
+            reject(new Error('O servidor demorou para confirmar o acesso.'));
+            return;
+          }
+
+          try{
+            const status = await apiGet(
+              statusAction,
+              {requestId},
+              8000
+            );
+
+            if(status.pending){
+              setTimeout(poll,650);
+              return;
+            }
+
+            if(!status.ok){
+              reject(new Error(status.erro || 'Não foi possível concluir o acesso.'));
+              return;
+            }
+
+            resolve(status.result);
+          }catch(err){
+            setTimeout(poll,850);
+          }
+        };
+
+        setTimeout(poll,600);
+      });
+    }
+
+    function saveSession(result,remember){
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(USER_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+
+      const storage = remember ? localStorage : sessionStorage;
+
+      storage.setItem(TOKEN_KEY,result.token);
+      storage.setItem(USER_KEY,JSON.stringify(result.user));
+    }
+
+    function redirectAfterLogin(user){
+      const requested =
+        new URLSearchParams(location.search).get('return');
+
+      if(requested){
+        location.replace(requested);
+        return;
+      }
+
+      location.replace(
+        user.profile === 'REPRESENTANTE'
+          ? 'painel-representante.html'
+          : 'painel.html'
+      );
+    }
+
+    function showError(message){
+      loginError.textContent = message;
+      loginError.classList.add('show');
+    }
+
+    function clearError(){
+      loginError.textContent = '';
+      loginError.classList.remove('show');
+    }
+
+    async function detectSetup(){
+      try{
+        const status = await apiGet('authBootstrapStatus');
+
+        setupMode = Boolean(status.ok && status.needsSetup);
+
+        document.body.classList.toggle('setup-mode',setupMode);
+
+        if(setupMode){
+          title.textContent = 'Primeiro acesso';
+          submitBtn.textContent = 'Criar acesso administrativo';
+          document.getElementById('nomeAdmin').required = true;
+          document.getElementById('confirmarSenha').required = true;
+        }
+      }catch(err){
+        showError(err.message || String(err));
+      }
+    }
 
     togglePassword.addEventListener('click', () => {
       const hidden = passwordInput.type === 'password';
@@ -560,50 +780,75 @@
       );
     });
 
-    document.getElementById('forgotLink').addEventListener('click', (event) => {
+    document.getElementById('forgotLink').addEventListener('click', event => {
       event.preventDefault();
-
-      alert(
-        'A recuperação de senha será vinculada ao painel administrativo.'
-      );
+      alert('Solicite ao Administrativo a redefinição da sua senha.');
     });
 
-    loginForm.addEventListener('submit', async (event) => {
+    loginForm.addEventListener('submit', async event => {
       event.preventDefault();
+      clearError();
 
-      const usuario = document.getElementById('usuario').value.trim();
-      const senha = passwordInput.value;
+      const login = document.getElementById('usuario').value.trim();
+      const password = passwordInput.value;
 
-      loginError.classList.remove('show');
-      loginError.textContent = '';
-
-      if (!usuario || !senha) {
-        loginError.textContent = 'Informe usuário e senha.';
-        loginError.classList.add('show');
+      if(!login || !password){
+        showError('Informe usuário e senha.');
         return;
       }
 
-      /*
-        IMPORTANTE:
-        Esta tela já está pronta visualmente.
+      submitBtn.disabled = true;
+      const normalText = submitBtn.textContent;
+      submitBtn.textContent = setupMode ? 'Criando acesso...' : 'Entrando...';
 
-        O próximo passo é substituir este trecho pela autenticação real
-        no Google Apps Script, com:
+      try{
+        let result;
 
-        - usuário;
-        - senha com hash;
-        - sessão;
-        - perfil REPRESENTANTE ou ADMINISTRATIVO;
-        - controle de permissões no backend.
+        if(setupMode){
+          const name = document.getElementById('nomeAdmin').value.trim();
+          const confirm = document.getElementById('confirmarSenha').value;
 
-        Não salvar senha no localStorage.
-        Não validar senha apenas no JavaScript.
-      */
+          if(!name){
+            throw new Error('Informe o nome do administrativo.');
+          }
 
-      loginError.textContent =
-        'Interface pronta. A autenticação será conectada ao backend no próximo passo.';
-      loginError.classList.add('show');
+          if(password !== confirm){
+            throw new Error('As senhas não conferem.');
+          }
+
+          if(password.length < 8){
+            throw new Error('A senha deve possuir pelo menos 8 caracteres.');
+          }
+
+          result = await submitAuth(
+            'authBootstrap',
+            {name,login,password},
+            'authBootstrapStatusResult'
+          );
+        }else{
+          result = await submitAuth(
+            'authLogin',
+            {login,password},
+            'authLoginStatus'
+          );
+        }
+
+        saveSession(
+          result,
+          setupMode || document.getElementById('lembrar').checked
+        );
+
+        redirectAfterLogin(result.user);
+
+      }catch(err){
+        showError(err.message || String(err));
+      }finally{
+        submitBtn.disabled = false;
+        submitBtn.textContent = normalText;
+      }
     });
+
+    detectSetup();
   </script>
 </body>
 </html>

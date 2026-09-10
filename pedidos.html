@@ -905,6 +905,95 @@ td.money,th.money{text-align:right}
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbxPZaI7aJJ8uLcTX8LtiePLsugCGTFsLFVAuGvsvLNz9BPqqlM2oKi-zU9HNkRWPCIitA/exec';
 
+const CAMPELLO_AUTH_TOKEN_KEY = 'campello_auth_token';
+const CAMPELLO_AUTH_USER_KEY = 'campello_auth_user';
+
+function getAuthToken(){
+  return (
+    sessionStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY) ||
+    localStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY) ||
+    ''
+  );
+}
+
+function getAuthUser(){
+  const raw =
+    sessionStorage.getItem(CAMPELLO_AUTH_USER_KEY) ||
+    localStorage.getItem(CAMPELLO_AUTH_USER_KEY) ||
+    '';
+
+  try{
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    return null;
+  }
+}
+
+function clearLocalAuth(){
+  sessionStorage.removeItem(CAMPELLO_AUTH_TOKEN_KEY);
+  sessionStorage.removeItem(CAMPELLO_AUTH_USER_KEY);
+  localStorage.removeItem(CAMPELLO_AUTH_TOKEN_KEY);
+  localStorage.removeItem(CAMPELLO_AUTH_USER_KEY);
+}
+
+function authLoginPage(){
+  const retorno =
+    location.pathname.split('/').pop() +
+    location.search;
+
+  return (
+    'login.html?return=' +
+    encodeURIComponent(retorno)
+  );
+}
+
+function requireLocalAuth(allowedProfiles){
+  const token = getAuthToken();
+  const user = getAuthUser();
+
+  if(!token || !user){
+    location.replace(authLoginPage());
+    return null;
+  }
+
+  if(
+    Array.isArray(allowedProfiles) &&
+    allowedProfiles.length &&
+    !allowedProfiles.includes(user.profile)
+  ){
+    location.replace(
+      user.profile === 'REPRESENTANTE'
+        ? 'painel-representante.html'
+        : 'painel.html'
+    );
+    return null;
+  }
+
+  return user;
+}
+
+async function logoutCampello(){
+  const token = getAuthToken();
+
+  clearLocalAuth();
+
+  if(token){
+    try{
+      await apiGet(
+        'authLogout',
+        {token},
+        5000,
+        true
+      );
+    }catch(e){}
+  }
+
+  location.replace('login.html');
+}
+
+const CURRENT_AUTH_USER = requireLocalAuth(["REPRESENTANTE", "ADMINISTRATIVO"]);
+
+
 let orders = [];
 let currentOrder = null;
 let searchTimer = null;
@@ -994,7 +1083,8 @@ function apiGet(action, params={}, timeout=16000){
         action,
         callback,
         _:String(Date.now()),
-        ...params
+        token:getAuthToken(),
+      ...params
       });
 
     const timer =
@@ -1414,9 +1504,14 @@ function renderActions(){
       `<button class="btn btn-blue" onclick="runWorkflow('approve')">Aprovar pedido</button>`
     );
 
-    actions.push(
-      `<button class="btn btn-green" onclick="runWorkflow('invoice')">Faturar direto</button>`
-    );
+    if(
+      CURRENT_AUTH_USER &&
+      CURRENT_AUTH_USER.profile === 'ADMINISTRATIVO'
+    ){
+      actions.push(
+        `<button class="btn btn-green" onclick="runWorkflow('invoice')">Faturar direto</button>`
+      );
+    }
 
     actions.push(
       `<button class="btn btn-red" onclick="runWorkflow('cancel')">Cancelar</button>`
@@ -1427,18 +1522,28 @@ function renderActions(){
       `<button class="btn btn-orange" onclick="runWorkflow('separate')">Enviar para separação</button>`
     );
 
-    actions.push(
-      `<button class="btn btn-green" onclick="runWorkflow('invoice')">Faturar venda</button>`
-    );
+    if(
+      CURRENT_AUTH_USER &&
+      CURRENT_AUTH_USER.profile === 'ADMINISTRATIVO'
+    ){
+      actions.push(
+        `<button class="btn btn-green" onclick="runWorkflow('invoice')">Faturar venda</button>`
+      );
+    }
 
     actions.push(
       `<button class="btn btn-red" onclick="runWorkflow('cancel')">Cancelar</button>`
     );
 
   }else if(status === 'Separação'){
-    actions.push(
-      `<button class="btn btn-green" onclick="runWorkflow('invoice')">Faturar venda</button>`
-    );
+    if(
+      CURRENT_AUTH_USER &&
+      CURRENT_AUTH_USER.profile === 'ADMINISTRATIVO'
+    ){
+      actions.push(
+        `<button class="btn btn-green" onclick="runWorkflow('invoice')">Faturar venda</button>`
+      );
+    }
 
     actions.push(
       `<button class="btn btn-red" onclick="runWorkflow('cancel')">Cancelar</button>`
@@ -1574,6 +1679,7 @@ function submitOrderEdit(payload){
     const data = document.createElement('input');
     data.type = 'hidden';
     data.name = 'payload';
+    payload.authToken = getAuthToken();
     data.value = JSON.stringify(payload);
 
     form.appendChild(req);
@@ -1914,6 +2020,16 @@ apiGet('ping')
     $('connectionStatus').textContent =
       '● Erro de conexão';
   });
+
+document.querySelectorAll('a[href="painel.html"]').forEach(link => {
+  if(
+    CURRENT_AUTH_USER &&
+    CURRENT_AUTH_USER.profile === 'REPRESENTANTE'
+  ){
+    link.href = 'painel-representante.html';
+    link.textContent = 'Painel';
+  }
+});
 
 loadOrders();
 </script>

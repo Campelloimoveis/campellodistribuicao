@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Painel do Representante — Campello Distribuição</title>
+<meta name="theme-color" content="#0b2b4f">
+<style>
+:root{--navy:#0b2b4f;--navy2:#123f73;--bg:#f3f6f9;--surface:#fff;--line:#dce4eb;--text:#15243a;--muted:#6c7c8f;}
+*{box-sizing:border-box;margin:0;padding:0} body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{text-decoration:none;color:inherit} .top{background:#fff;border-bottom:1px solid var(--line);padding:0 22px;height:68px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:10px} .brand img{width:42px;height:42px;object-fit:contain} .brand strong{color:var(--navy);font-size:14px} .brand span{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.user{display:flex;align-items:center;gap:10px} .avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--navy);color:#fff;font-weight:800;font-size:12px}
+.logout{border:0;background:#edf2f6;color:var(--navy);padding:10px 13px;border-radius:9px;font-weight:800;cursor:pointer}
+main{width:min(1100px,100%);margin:auto;padding:34px 20px} h1{color:var(--navy);font-size:29px} .intro{color:var(--muted);font-size:13px;margin-top:6px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:26px 0} .metric{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px} .metric strong{display:block;color:var(--navy);font-size:27px} .metric span{display:block;color:var(--muted);font-size:11px;margin-top:6px}
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:14px} .card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:21px;min-height:132px;transition:.15s;display:flex;flex-direction:column;justify-content:space-between} .card:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(11,43,79,.08)} .card h2{font-size:16px;color:var(--navy)} .card p{font-size:11px;color:var(--muted);line-height:1.5;margin-top:6px} .go{font-size:11px;font-weight:800;color:#1762a6;margin-top:18px} .disabled{opacity:.6;cursor:not-allowed} .disabled:hover{transform:none;box-shadow:none}
+@media(max-width:720px){.cards{grid-template-columns:1fr}.actions{grid-template-columns:1fr}.top{padding:0 12px}main{padding:25px 14px}.brand span{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <img src="imagens/logo-campello.png" alt="Campello Distribuição" onerror="this.style.display='none'">
+    <div><strong>Campello Distribuição</strong><span>Área do Representante</span></div>
+  </div>
+  <div class="user">
+    <div id="userAvatar" class="avatar">RP</div>
+    <button class="logout" onclick="logoutCampello()">Sair</button>
+  </div>
+</header>
+<main>
+  <h1 id="welcome">Olá</h1>
+  <p class="intro">Acompanhe seus orçamentos e pedidos e crie novas solicitações comerciais.</p>
+
+  <section class="cards">
+    <div class="metric"><strong id="mQuotes">--</strong><span>Orçamentos</span></div>
+    <div class="metric"><strong id="mOpen">--</strong><span>Pedidos abertos</span></div>
+    <div class="metric"><strong id="mSep">--</strong><span>Em separação</span></div>
+  </section>
+
+  <section class="actions">
+    <a class="card" href="vendas.html" target="_blank" rel="noopener">
+      <div><h2>Novo pedido</h2><p>Cadastre cliente, escolha produtos e crie um novo pedido ou orçamento.</p></div>
+      <div class="go">Abrir →</div>
+    </a>
+
+    <a class="card" href="pedidos.html?status=Orçamento" target="_blank" rel="noopener">
+      <div><h2>Orçamentos</h2><p>Revise solicitações de orçamento recebidas e acompanhe negociações.</p></div>
+      <div class="go">Abrir →</div>
+    </a>
+
+    <a class="card" href="pedidos.html" target="_blank" rel="noopener">
+      <div><h2>Pedidos</h2><p>Acompanhe pedidos abertos, separação, faturados e entregues.</p></div>
+      <div class="go">Abrir →</div>
+    </a>
+
+    <div class="card disabled">
+      <div><h2>Estoque</h2><p>Consulta operacional de disponibilidade e itens sob encomenda.</p></div>
+      <div class="go">Em breve</div>
+    </div>
+
+    <a class="card" href="catalogo.html" target="_blank" rel="noopener">
+      <div><h2>Catálogo público</h2><p>Abra o catálogo que é apresentado aos clientes.</p></div>
+      <div class="go">Abrir →</div>
+    </a>
+  </section>
+</main>
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbxPZaI7aJJ8uLcTX8LtiePLsugCGTFsLFVAuGvsvLNz9BPqqlM2oKi-zU9HNkRWPCIitA/exec';
+
+const CAMPELLO_AUTH_TOKEN_KEY = 'campello_auth_token';
+const CAMPELLO_AUTH_USER_KEY = 'campello_auth_user';
+
+function getAuthToken(){
+  return (
+    sessionStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY) ||
+    localStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY) ||
+    ''
+  );
+}
+
+function getAuthUser(){
+  const raw =
+    sessionStorage.getItem(CAMPELLO_AUTH_USER_KEY) ||
+    localStorage.getItem(CAMPELLO_AUTH_USER_KEY) ||
+    '';
+
+  try{
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    return null;
+  }
+}
+
+function clearLocalAuth(){
+  sessionStorage.removeItem(CAMPELLO_AUTH_TOKEN_KEY);
+  sessionStorage.removeItem(CAMPELLO_AUTH_USER_KEY);
+  localStorage.removeItem(CAMPELLO_AUTH_TOKEN_KEY);
+  localStorage.removeItem(CAMPELLO_AUTH_USER_KEY);
+}
+
+function authLoginPage(){
+  const retorno =
+    location.pathname.split('/').pop() +
+    location.search;
+
+  return (
+    'login.html?return=' +
+    encodeURIComponent(retorno)
+  );
+}
+
+function requireLocalAuth(allowedProfiles){
+  const token = getAuthToken();
+  const user = getAuthUser();
+
+  if(!token || !user){
+    location.replace(authLoginPage());
+    return null;
+  }
+
+  if(
+    Array.isArray(allowedProfiles) &&
+    allowedProfiles.length &&
+    !allowedProfiles.includes(user.profile)
+  ){
+    location.replace(
+      user.profile === 'REPRESENTANTE'
+        ? 'painel-representante.html'
+        : 'painel.html'
+    );
+    return null;
+  }
+
+  return user;
+}
+
+async function logoutCampello(){
+  const token = getAuthToken();
+
+  clearLocalAuth();
+
+  if(token){
+    try{
+      await apiGet(
+        'authLogout',
+        {token},
+        5000,
+        true
+      );
+    }catch(e){}
+  }
+
+  location.replace('login.html');
+}
+
+const CURRENT_AUTH_USER = requireLocalAuth(['REPRESENTANTE','ADMINISTRATIVO']);
+
+function apiGet(action,params={},timeout=16000,explicitToken=false){
+  return new Promise((resolve,reject)=>{
+    const callback='__campello_rep_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const script=document.createElement('script');
+    const query=new URLSearchParams({
+      action,callback,_:String(Date.now()),
+      token:explicitToken?(params.token||''):getAuthToken(),
+      ...params
+    });
+    const timer=setTimeout(()=>{cleanup();reject(new Error('A API demorou para responder.'));},timeout);
+    function cleanup(){clearTimeout(timer);script.remove();try{delete window[callback];}catch(e){}}
+    window[callback]=data=>{cleanup();resolve(data);};
+    script.onerror=()=>{cleanup();reject(new Error('Erro de conexão.'));};
+    script.src=API_URL+'?'+query.toString();
+    document.body.appendChild(script);
+  });
+}
+
+async function boot(){
+  if(!CURRENT_AUTH_USER)return;
+  try{
+    const session=await apiGet('authSession');
+    if(!session.ok)throw new Error(session.erro||'Sessão inválida');
+
+    if(session.user.profile==='ADMINISTRATIVO'){
+      location.replace('painel.html');
+      return;
+    }
+
+    document.getElementById('welcome').textContent='Olá, '+(session.user.name||'Representante');
+    document.getElementById('userAvatar').textContent=(session.user.name||'RP').split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
+
+    const data=await apiGet('orders',{limit:1},22000);
+    if(data.ok){
+      const r=data.resumo||{};
+      document.getElementById('mQuotes').textContent=r.orcamento||0;
+      document.getElementById('mOpen').textContent=r.pedidoAberto||0;
+      document.getElementById('mSep').textContent=r.separacao||0;
+    }
+  }catch(err){
+    clearLocalAuth();
+    location.replace('login.html');
+  }
+}
+boot();
+</script>
+</body>
+</html>

@@ -695,8 +695,7 @@
                   stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
           </svg>
           Usuários
-          <span class="tag">em breve</span>
-        </a>
+          </a>
       </nav>
 
       <div class="sidebar-bottom">
@@ -708,7 +707,7 @@
           Abrir catálogo público
         </a>
 
-        <a class="logout-link" href="login.html">
+        <a class="logout-link" href="#" onclick="logoutCampello();return false;">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
             <path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"
                   stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
@@ -736,10 +735,10 @@
 
         <div class="user-box">
           <div class="user-copy">
-            <strong>Administrativo</strong>
+            <strong id="authUserName">Administrativo</strong>
             <span>Acesso total</span>
           </div>
-          <div class="user-avatar">AD</div>
+          <div id="authAvatar" class="user-avatar">AD</div>
         </div>
       </header>
 
@@ -763,7 +762,7 @@
               </svg>
             </div>
             <div>
-              <strong>--</strong>
+              <strong id="metricQuotes">--</strong>
               <span>Orçamentos pendentes</span>
               <small>Será conectado ao Apps Script</small>
             </div>
@@ -777,7 +776,7 @@
               </svg>
             </div>
             <div>
-              <strong>--</strong>
+              <strong id="metricOpen">--</strong>
               <span>Pedidos abertos</span>
               <small>Inclui pedidos sob encomenda</small>
             </div>
@@ -791,7 +790,7 @@
               </svg>
             </div>
             <div>
-              <strong>--</strong>
+              <strong id="metricBilling">--</strong>
               <span>Aguardando faturamento</span>
               <small>Pedidos em separação</small>
             </div>
@@ -805,7 +804,7 @@
               </svg>
             </div>
             <div>
-              <strong>R$ --</strong>
+              <strong id="metricReceivable">R$ --</strong>
               <span>Contas a receber</span>
               <small>Títulos em aberto</small>
             </div>
@@ -819,7 +818,7 @@
               </svg>
             </div>
             <div>
-              <strong>R$ --</strong>
+              <strong id="metricPayable">R$ --</strong>
               <span>Contas a pagar</span>
               <small>Títulos em aberto</small>
             </div>
@@ -893,13 +892,13 @@
                   </div>
                 </a>
 
-                <div class="action-card disabled">
+                <a class="action-card" href="usuarios.html" target="_blank" rel="noopener">
                   <div class="action-icon">👥</div>
                   <div>
                     <strong>Usuários</strong>
-                    <span>Criação e permissões será o próximo módulo da intranet.</span>
+                    <span>Crie acessos e defina o perfil de cada pessoa.</span>
                   </div>
-                </div>
+                </a>
 
               </div>
             </div>
@@ -931,8 +930,105 @@
   </div>
 
   <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxPZaI7aJJ8uLcTX8LtiePLsugCGTFsLFVAuGvsvLNz9BPqqlM2oKi-zU9HNkRWPCIitA/exec';
+
+const CAMPELLO_AUTH_TOKEN_KEY = 'campello_auth_token';
+const CAMPELLO_AUTH_USER_KEY = 'campello_auth_user';
+
+function getAuthToken(){
+  return (
+    sessionStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY) ||
+    localStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY) ||
+    ''
+  );
+}
+
+function getAuthUser(){
+  const raw =
+    sessionStorage.getItem(CAMPELLO_AUTH_USER_KEY) ||
+    localStorage.getItem(CAMPELLO_AUTH_USER_KEY) ||
+    '';
+
+  try{
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    return null;
+  }
+}
+
+function clearLocalAuth(){
+  sessionStorage.removeItem(CAMPELLO_AUTH_TOKEN_KEY);
+  sessionStorage.removeItem(CAMPELLO_AUTH_USER_KEY);
+  localStorage.removeItem(CAMPELLO_AUTH_TOKEN_KEY);
+  localStorage.removeItem(CAMPELLO_AUTH_USER_KEY);
+}
+
+function authLoginPage(){
+  const retorno =
+    location.pathname.split('/').pop() +
+    location.search;
+
+  return (
+    'login.html?return=' +
+    encodeURIComponent(retorno)
+  );
+}
+
+function requireLocalAuth(allowedProfiles){
+  const token = getAuthToken();
+  const user = getAuthUser();
+
+  if(!token || !user){
+    location.replace(authLoginPage());
+    return null;
+  }
+
+  if(
+    Array.isArray(allowedProfiles) &&
+    allowedProfiles.length &&
+    !allowedProfiles.includes(user.profile)
+  ){
+    location.replace(
+      user.profile === 'REPRESENTANTE'
+        ? 'painel-representante.html'
+        : 'painel.html'
+    );
+    return null;
+  }
+
+  return user;
+}
+
+async function logoutCampello(){
+  const token = getAuthToken();
+
+  clearLocalAuth();
+
+  if(token){
+    try{
+      await apiGet(
+        'authLogout',
+        {token},
+        5000,
+        true
+      );
+    }catch(e){}
+  }
+
+  location.replace('login.html');
+}
+
+    const CURRENT_AUTH_USER = requireLocalAuth(['ADMINISTRATIVO']);
+
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
+
+    function money(value){
+      return Number(value || 0).toLocaleString(
+        'pt-BR',
+        {style:'currency',currency:'BRL'}
+      );
+    }
 
     function openSidebar(){
       sidebar.classList.add('open');
@@ -946,11 +1042,120 @@
       document.body.style.overflow = '';
     }
 
+    function apiGet(action,params={},timeout=16000,explicitToken=false){
+      return new Promise((resolve,reject)=>{
+        const callback =
+          '__campello_panel_' +
+          Date.now() +
+          '_' +
+          Math.random().toString(36).slice(2);
+
+        const script = document.createElement('script');
+
+        const query = new URLSearchParams({
+          action,
+          callback,
+          _:String(Date.now()),
+          token: explicitToken ? (params.token || '') : getAuthToken(),
+          ...params
+        });
+
+        const timer = setTimeout(()=>{
+          cleanup();
+          reject(new Error('A API demorou para responder.'));
+        },timeout);
+
+        function cleanup(){
+          clearTimeout(timer);
+          script.remove();
+          try{delete window[callback];}catch(e){}
+        }
+
+        window[callback] = data => {
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error('Não foi possível conectar à API.'));
+        };
+
+        script.src = API_URL + '?' + query.toString();
+        document.body.appendChild(script);
+      });
+    }
+
+    async function validatePanelSession(){
+      if(!CURRENT_AUTH_USER) return;
+
+      try{
+        const data = await apiGet('authSession');
+
+        if(!data.ok || !data.authenticated){
+          throw new Error(data.erro || 'Sessão inválida.');
+        }
+
+        if(data.user.profile !== 'ADMINISTRATIVO'){
+          location.replace('painel-representante.html');
+          return;
+        }
+
+        document.getElementById('authUserName').textContent =
+          data.user.name || 'Administrativo';
+
+        document.getElementById('authAvatar').textContent =
+          (data.user.name || 'AD')
+            .split(/\s+/)
+            .slice(0,2)
+            .map(x=>x[0] || '')
+            .join('')
+            .toUpperCase();
+
+      }catch(err){
+        clearLocalAuth();
+        location.replace('login.html');
+      }
+    }
+
+    async function loadDashboard(){
+      try{
+        const [ordersData,financeData] = await Promise.all([
+          apiGet('orders',{limit:1},22000),
+          apiGet('finance',{limit:1},22000)
+        ]);
+
+        if(ordersData.ok){
+          const r = ordersData.resumo || {};
+          document.getElementById('metricQuotes').textContent =
+            r.orcamento || 0;
+          document.getElementById('metricOpen').textContent =
+            r.pedidoAberto || 0;
+          document.getElementById('metricBilling').textContent =
+            r.separacao || 0;
+        }
+
+        if(financeData.ok){
+          const r = financeData.resumo || {};
+          document.getElementById('metricReceivable').textContent =
+            money(r.receberAberto || 0);
+          document.getElementById('metricPayable').textContent =
+            money(r.pagarAberto || 0);
+        }
+
+      }catch(err){
+        console.warn(err);
+      }
+    }
+
     window.addEventListener('resize',()=>{
       if(window.innerWidth > 760){
         closeSidebar();
       }
     });
-  </script>
+
+    validatePanelSession();
+    loadDashboard();
+</script>
 </body>
 </html>

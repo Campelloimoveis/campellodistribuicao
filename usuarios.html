@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Usuários — Campello Distribuição</title>
+<meta name="theme-color" content="#0b2b4f">
+<style>
+:root{--navy:#0b2b4f;--blue:#1762a6;--red:#c9272c;--green:#16834b;--bg:#f3f6f9;--surface:#fff;--line:#dce4eb;--text:#15243a;--muted:#6c7c8f;}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)} button,input,select{font:inherit} a{text-decoration:none;color:inherit}
+header{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:10}
+.brand strong{display:block;color:var(--navy);font-size:14px} .brand span{font-size:10px;color:var(--muted)} .back{padding:10px 13px;background:#edf2f6;border-radius:9px;color:var(--navy);font-size:11px;font-weight:800}
+main{width:min(1100px,100%);margin:auto;padding:30px 20px} .head{display:flex;justify-content:space-between;gap:15px;align-items:flex-end;margin-bottom:20px} h1{margin:0;color:var(--navy);font-size:28px} .head p{margin:6px 0 0;color:var(--muted);font-size:12px}
+.btn{border:0;border-radius:9px;padding:11px 14px;font-weight:800;font-size:11px;cursor:pointer} .primary{background:var(--navy);color:#fff} .light{background:#edf2f6;color:var(--navy)} .danger{background:#fff0f0;color:#a51d22} .success{background:#eaf7f0;color:#117143}
+.panel{background:#fff;border:1px solid var(--line);border-radius:15px;overflow:hidden} table{width:100%;border-collapse:collapse} th,td{padding:13px;text-align:left;border-bottom:1px solid var(--line);font-size:11px} th{font-size:9px;text-transform:uppercase;color:var(--muted);background:#f8fafc} .badge{display:inline-flex;border-radius:99px;padding:5px 8px;font-size:9px;font-weight:800} .on{background:#eaf7f0;color:#137345} .off{background:#f3f4f6;color:#6b7280} .profile{background:#eef5fb;color:#175985} .actions{display:flex;gap:6px;flex-wrap:wrap}
+.empty{padding:45px;text-align:center;color:var(--muted);font-size:12px}
+.modal{display:none;position:fixed;inset:0;background:rgba(7,24,41,.55);z-index:50;padding:18px;align-items:center;justify-content:center} .modal.open{display:flex} .box{background:#fff;width:min(560px,100%);border-radius:16px;max-height:92vh;overflow:auto} .box-head{padding:17px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center} .box-body{padding:19px} .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px} label{display:block;font-size:10px;font-weight:800;margin-bottom:6px} input,select{width:100%;height:43px;border:1px solid #ccd7e0;border-radius:9px;padding:0 11px;background:#fff} .full{grid-column:1/-1} .box-foot{padding:15px 19px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px} .note{font-size:10px;color:var(--muted);line-height:1.45;margin-top:10px} .toast{display:none;position:fixed;right:18px;bottom:18px;background:#0b2b4f;color:#fff;padding:12px 15px;border-radius:10px;font-size:11px;z-index:90}
+.cards{display:none}
+@media(max-width:760px){header{padding:0 12px} main{padding:22px 12px} .head{align-items:flex-start;flex-direction:column} .panel table{display:none} .cards{display:block} .user-card{background:#fff;border-bottom:1px solid var(--line);padding:16px} .user-card:first-child{border-radius:15px 15px 0 0} .user-card strong{font-size:13px;color:var(--navy)} .meta{font-size:10px;color:var(--muted);margin:5px 0 11px;line-height:1.5} .grid{grid-template-columns:1fr} .full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand"><strong>Campello Distribuição</strong><span>Gestão de usuários</span></div>
+ <a class="back" href="painel.html">← Painel Admin</a>
+</header>
+<main>
+ <div class="head">
+  <div><h1>Usuários</h1><p>Crie acessos e defina quem é Representante ou Administrativo.</p></div>
+  <button class="btn primary" onclick="openUser()">+ Novo usuário</button>
+ </div>
+ <div class="panel">
+  <table>
+   <thead><tr><th>Nome</th><th>Login</th><th>Perfil</th><th>Status</th><th>Último acesso</th><th>Ações</th></tr></thead>
+   <tbody id="usersBody"></tbody>
+  </table>
+  <div id="userCards" class="cards"></div>
+  <div id="empty" class="empty">Carregando usuários...</div>
+ </div>
+</main>
+
+<div id="userModal" class="modal">
+ <div class="box">
+  <div class="box-head"><strong id="modalTitle">Novo usuário</strong><button class="btn light" onclick="closeUser()">Fechar</button></div>
+  <div class="box-body">
+   <div class="grid">
+    <div class="full"><label>Nome</label><input id="userName"></div>
+    <div><label>Login</label><input id="userLogin" autocomplete="off"></div>
+    <div><label>Perfil</label><select id="userProfile"><option value="REPRESENTANTE">Representante</option><option value="ADMINISTRATIVO">Administrativo</option></select></div>
+    <div id="passwordField" class="full"><label>Senha inicial</label><input id="userPassword" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"></div>
+    <div class="full"><label><input id="userActive" type="checkbox" checked style="width:auto;height:auto;margin-right:6px"> Usuário ativo</label></div>
+   </div>
+   <div class="note">Administrativo possui acesso total interno. Representante acessa Vendas, Orçamentos e Pedidos, mas não pode faturar nem acessar Financeiro/Compras.</div>
+  </div>
+  <div class="box-foot"><button class="btn light" onclick="closeUser()">Cancelar</button><button id="saveUserBtn" class="btn primary" onclick="saveUser()">Salvar</button></div>
+ </div>
+</div>
+
+<div id="passwordModal" class="modal">
+ <div class="box" style="width:min(440px,100%)">
+  <div class="box-head"><strong>Redefinir senha</strong><button class="btn light" onclick="closePassword()">Fechar</button></div>
+  <div class="box-body">
+   <label>Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+   <div class="note">A nova senha passa a valer imediatamente no próximo login.</div>
+  </div>
+  <div class="box-foot"><button class="btn light" onclick="closePassword()">Cancelar</button><button id="resetBtn" class="btn primary" onclick="resetPassword()">Redefinir</button></div>
+ </div>
+</div>
+
+<iframe name="apiPostFrame" style="display:none"></iframe>
+<div id="toast" class="toast"></div>
+
+<script>
+const API_URL='https://script.google.com/macros/s/AKfycbxPZaI7aJJ8uLcTX8LtiePLsugCGTFsLFVAuGvsvLNz9BPqqlM2oKi-zU9HNkRWPCIitA/exec';
+
+const CAMPELLO_AUTH_TOKEN_KEY = 'campello_auth_token';
+const CAMPELLO_AUTH_USER_KEY = 'campello_auth_user';
+
+function getAuthToken(){
+  return (
+    sessionStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY) ||
+    localStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY) ||
+    ''
+  );
+}
+
+function getAuthUser(){
+  const raw =
+    sessionStorage.getItem(CAMPELLO_AUTH_USER_KEY) ||
+    localStorage.getItem(CAMPELLO_AUTH_USER_KEY) ||
+    '';
+
+  try{
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    return null;
+  }
+}
+
+function clearLocalAuth(){
+  sessionStorage.removeItem(CAMPELLO_AUTH_TOKEN_KEY);
+  sessionStorage.removeItem(CAMPELLO_AUTH_USER_KEY);
+  localStorage.removeItem(CAMPELLO_AUTH_TOKEN_KEY);
+  localStorage.removeItem(CAMPELLO_AUTH_USER_KEY);
+}
+
+function authLoginPage(){
+  const retorno =
+    location.pathname.split('/').pop() +
+    location.search;
+
+  return (
+    'login.html?return=' +
+    encodeURIComponent(retorno)
+  );
+}
+
+function requireLocalAuth(allowedProfiles){
+  const token = getAuthToken();
+  const user = getAuthUser();
+
+  if(!token || !user){
+    location.replace(authLoginPage());
+    return null;
+  }
+
+  if(
+    Array.isArray(allowedProfiles) &&
+    allowedProfiles.length &&
+    !allowedProfiles.includes(user.profile)
+  ){
+    location.replace(
+      user.profile === 'REPRESENTANTE'
+        ? 'painel-representante.html'
+        : 'painel.html'
+    );
+    return null;
+  }
+
+  return user;
+}
+
+async function logoutCampello(){
+  const token = getAuthToken();
+
+  clearLocalAuth();
+
+  if(token){
+    try{
+      await apiGet(
+        'authLogout',
+        {token},
+        5000,
+        true
+      );
+    }catch(e){}
+  }
+
+  location.replace('login.html');
+}
+
+const CURRENT_AUTH_USER=requireLocalAuth(['ADMINISTRATIVO']);
+let users=[];
+let editingId='';
+let passwordUserId='';
+
+function $(id){return document.getElementById(id)}
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function toast(msg){$('toast').textContent=msg;$('toast').style.display='block';clearTimeout(window.__t);window.__t=setTimeout(()=>$('toast').style.display='none',3200)}
+function uid(){return window.crypto&&crypto.randomUUID?crypto.randomUUID():'req-'+Date.now()+'-'+Math.random().toString(36).slice(2)}
+
+function apiGet(action,params={},timeout=15000,explicitToken=false){
+ return new Promise((resolve,reject)=>{
+  const callback='__campello_users_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+  const script=document.createElement('script');
+  const query=new URLSearchParams({action,callback,_:String(Date.now()),token:explicitToken?(params.token||''):getAuthToken(),...params});
+  const timer=setTimeout(()=>{cleanup();reject(new Error('A API demorou para responder.'))},timeout);
+  function cleanup(){clearTimeout(timer);script.remove();try{delete window[callback]}catch(e){}}
+  window[callback]=d=>{cleanup();resolve(d)};
+  script.onerror=()=>{cleanup();reject(new Error('Erro de conexão.'))};
+  script.src=API_URL+'?'+query.toString();
+  document.body.appendChild(script);
+ });
+}
+
+function postUser(kind,payload){
+ return new Promise((resolve,reject)=>{
+  const requestId=uid();
+  payload.kind=kind;payload.requestId=requestId;payload.authToken=getAuthToken();
+  const form=document.createElement('form');form.method='POST';form.action=API_URL;form.target='apiPostFrame';form.style.display='none';
+  const data=document.createElement('input');data.type='hidden';data.name='payload';data.value=JSON.stringify(payload);form.appendChild(data);document.body.appendChild(form);form.submit();setTimeout(()=>form.remove(),1200);
+  const started=Date.now();
+  const poll=async()=>{
+   if(Date.now()-started>30000){reject(new Error('A confirmação demorou.'));return}
+   try{
+    const s=await apiGet('authUserAdminStatus',{requestId},8000);
+    if(s.pending){setTimeout(poll,650);return}
+    if(!s.ok){reject(new Error(s.erro||'Não foi possível concluir.'));return}
+    resolve(s.result);
+   }catch(e){setTimeout(poll,850)}
+  };
+  setTimeout(poll,600);
+ });
+}
+
+async function loadUsers(){
+ try{
+  const d=await apiGet('users',{},18000);
+  if(!d.ok)throw new Error(d.erro||'Não foi possível carregar.');
+  users=d.usuarios||[];render();
+ }catch(e){
+  if(/sessão|perfil|acesso/i.test(e.message||'')){clearLocalAuth();location.replace('login.html');return}
+  $('empty').textContent=e.message||String(e);
+ }
+}
+
+function render(){
+ $('empty').style.display=users.length?'none':'block';
+ if(!users.length){$('empty').textContent='Nenhum usuário cadastrado.'}
+ $('usersBody').innerHTML=users.map(u=>`<tr>
+  <td><strong>${esc(u.name)}</strong></td><td>${esc(u.login)}</td>
+  <td><span class="badge profile">${u.profile==='ADMINISTRATIVO'?'Administrativo':'Representante'}</span></td>
+  <td><span class="badge ${u.active?'on':'off'}">${u.active?'Ativo':'Inativo'}</span></td>
+  <td>${esc(u.lastAccess||'Nunca')}</td>
+  <td><div class="actions"><button class="btn light" onclick="openUser('${u.id}')">Editar</button><button class="btn light" onclick="openPassword('${u.id}')">Senha</button><button class="btn ${u.active?'danger':'success'}" onclick="toggleUser('${u.id}',${!u.active})">${u.active?'Desativar':'Ativar'}</button></div></td>
+ </tr>`).join('');
+
+ $('userCards').innerHTML=users.map(u=>`<div class="user-card">
+  <strong>${esc(u.name)}</strong>
+  <div class="meta">${esc(u.login)} · ${u.profile==='ADMINISTRATIVO'?'Administrativo':'Representante'} · ${u.active?'Ativo':'Inativo'}<br>Último acesso: ${esc(u.lastAccess||'Nunca')}</div>
+  <div class="actions"><button class="btn light" onclick="openUser('${u.id}')">Editar</button><button class="btn light" onclick="openPassword('${u.id}')">Senha</button><button class="btn ${u.active?'danger':'success'}" onclick="toggleUser('${u.id}',${!u.active})">${u.active?'Desativar':'Ativar'}</button></div>
+ </div>`).join('');
+}
+
+function openUser(id=''){
+ editingId=id;
+ const u=users.find(x=>x.id===id);
+ $('modalTitle').textContent=u?'Editar usuário':'Novo usuário';
+ $('userName').value=u?u.name:'';
+ $('userLogin').value=u?u.login:'';
+ $('userProfile').value=u?u.profile:'REPRESENTANTE';
+ $('userActive').checked=u?u.active:true;
+ $('userPassword').value='';
+ $('passwordField').style.display=u?'none':'block';
+ $('userModal').classList.add('open');
+}
+function closeUser(){$('userModal').classList.remove('open')}
+
+async function saveUser(){
+ const payload={userId:editingId,name:$('userName').value.trim(),login:$('userLogin').value.trim(),profile:$('userProfile').value,active:$('userActive').checked,password:$('userPassword').value};
+ const btn=$('saveUserBtn');btn.disabled=true;btn.textContent='Salvando...';
+ try{const r=await postUser('userSave',payload);toast(r.message||'Salvo.');closeUser();await loadUsers()}catch(e){toast(e.message||String(e))}finally{btn.disabled=false;btn.textContent='Salvar'}
+}
+
+function openPassword(id){passwordUserId=id;$('newPassword').value='';$('passwordModal').classList.add('open')}
+function closePassword(){$('passwordModal').classList.remove('open')}
+
+async function resetPassword(){
+ const pass=$('newPassword').value;
+ if(pass.length<8){toast('A senha deve possuir pelo menos 8 caracteres.');return}
+ const btn=$('resetBtn');btn.disabled=true;btn.textContent='Redefinindo...';
+ try{const r=await postUser('userResetPassword',{userId:passwordUserId,password:pass});toast(r.message||'Senha alterada.');closePassword()}catch(e){toast(e.message||String(e))}finally{btn.disabled=false;btn.textContent='Redefinir'}
+}
+
+async function toggleUser(id,active){
+ const u=users.find(x=>x.id===id);
+ if(!u)return;
+ if(!confirm(`${active?'Ativar':'Desativar'} o acesso de ${u.name}?`))return;
+ try{const r=await postUser('userToggle',{userId:id,active});toast(r.message||'Atualizado.');await loadUsers()}catch(e){toast(e.message||String(e))}
+}
+
+async function boot(){
+ if(!CURRENT_AUTH_USER)return;
+ try{
+  const session=await apiGet('authSession');
+  if(!session.ok||session.user.profile!=='ADMINISTRATIVO')throw new Error('Acesso negado.');
+  loadUsers();
+ }catch(e){clearLocalAuth();location.replace('login.html')}
+}
+boot();
+</script>
+</body>
+</html>

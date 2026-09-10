@@ -739,6 +739,95 @@ td.money,th.money{text-align:right}
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbxPZaI7aJJ8uLcTX8LtiePLsugCGTFsLFVAuGvsvLNz9BPqqlM2oKi-zU9HNkRWPCIitA/exec';
 
+const CAMPELLO_AUTH_TOKEN_KEY = 'campello_auth_token';
+const CAMPELLO_AUTH_USER_KEY = 'campello_auth_user';
+
+function getAuthToken(){
+  return (
+    sessionStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY) ||
+    localStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY) ||
+    ''
+  );
+}
+
+function getAuthUser(){
+  const raw =
+    sessionStorage.getItem(CAMPELLO_AUTH_USER_KEY) ||
+    localStorage.getItem(CAMPELLO_AUTH_USER_KEY) ||
+    '';
+
+  try{
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    return null;
+  }
+}
+
+function clearLocalAuth(){
+  sessionStorage.removeItem(CAMPELLO_AUTH_TOKEN_KEY);
+  sessionStorage.removeItem(CAMPELLO_AUTH_USER_KEY);
+  localStorage.removeItem(CAMPELLO_AUTH_TOKEN_KEY);
+  localStorage.removeItem(CAMPELLO_AUTH_USER_KEY);
+}
+
+function authLoginPage(){
+  const retorno =
+    location.pathname.split('/').pop() +
+    location.search;
+
+  return (
+    'login.html?return=' +
+    encodeURIComponent(retorno)
+  );
+}
+
+function requireLocalAuth(allowedProfiles){
+  const token = getAuthToken();
+  const user = getAuthUser();
+
+  if(!token || !user){
+    location.replace(authLoginPage());
+    return null;
+  }
+
+  if(
+    Array.isArray(allowedProfiles) &&
+    allowedProfiles.length &&
+    !allowedProfiles.includes(user.profile)
+  ){
+    location.replace(
+      user.profile === 'REPRESENTANTE'
+        ? 'painel-representante.html'
+        : 'painel.html'
+    );
+    return null;
+  }
+
+  return user;
+}
+
+async function logoutCampello(){
+  const token = getAuthToken();
+
+  clearLocalAuth();
+
+  if(token){
+    try{
+      await apiGet(
+        'authLogout',
+        {token},
+        5000,
+        true
+      );
+    }catch(e){}
+  }
+
+  location.replace('login.html');
+}
+
+const CURRENT_AUTH_USER = requireLocalAuth(["ADMINISTRATIVO"]);
+
+
 let financeData = [];
 let currentTitle = null;
 let searchTimer = null;
@@ -801,7 +890,8 @@ function apiGet(action, params={}, timeout=15000){
         action,
         callback,
         _:String(Date.now()),
-        ...params
+        token:getAuthToken(),
+      ...params
       });
 
     const timer =
