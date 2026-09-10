@@ -448,6 +448,64 @@ td.money,th.money{text-align:right}
   align-items:center;
 }
 .payment-row:last-child{border-bottom:0}
+.card-details{
+  grid-column:1/-1;
+  display:none;
+  margin-top:2px;
+  padding:11px;
+  border:1px solid #cbddec;
+  border-radius:9px;
+  background:#f7fbff;
+}
+.payment-row.is-card .card-details{display:block}
+.card-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+}
+.card-grid label{
+  display:block;
+  margin-bottom:5px;
+  font-size:8px;
+  font-weight:800;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+.card-grid input,.card-grid select{
+  width:100%;
+}
+.card-calc{
+  margin-top:10px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.card-calc-item{
+  padding:9px 10px;
+  border-radius:8px;
+  background:#fff;
+  border:1px solid #dce6ee;
+}
+.card-calc-item span{
+  display:block;
+  color:var(--muted);
+  font-size:8px;
+  text-transform:uppercase;
+  font-weight:800;
+}
+.card-calc-item strong{
+  display:block;
+  margin-top:4px;
+  color:var(--navy);
+  font-size:11px;
+}
+.card-info{
+  margin-top:8px;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.45;
+}
+
 .payment-row input,.payment-row select{width:100%}
 .payment-remove{
   border:0;
@@ -591,6 +649,9 @@ td.money,th.money{text-align:right}
   }
   .payment-row .payment-method{grid-column:1/-1}
   .payment-row .payment-remove{justify-self:end}
+  .card-grid{grid-template-columns:1fr 1fr}
+  .card-calc{grid-template-columns:1fr}
+
 
   .modal{
     padding:0;
@@ -806,7 +867,7 @@ td.money,th.money{text-align:right}
             <div class="payment-head">
               <div>Forma de pagamento</div>
               <div>Valor</div>
-              <div>Conta</div>
+              <div>Conta / Instituição</div>
               <div></div>
             </div>
 
@@ -848,6 +909,14 @@ td.money,th.money{text-align:right}
     </div>
   </div>
 </div>
+
+<datalist id="accountSuggestions">
+  <option value="Nubank">
+  <option value="Mercado Pago">
+  <option value="PicPay">
+  <option value="Caixa físico">
+  <option value="Outro">
+</datalist>
 
 <iframe name="apiPostFrame" style="display:none"></iframe>
 <div id="toast" class="toast"></div>
@@ -1372,40 +1441,222 @@ function paymentMethodOptions(selected=''){
   `).join('');
 }
 
-function paymentAccountOptions(selected=''){
-  const options = [
-    'Banco',
-    'Caixa',
-    'Cartão',
-    'Outro'
-  ];
 
-  return options.map(value => `
-    <option value="${esc(value)}" ${value === selected ? 'selected' : ''}>
-      ${esc(value)}
-    </option>
-  `).join('');
-}
 
 function suggestedAccount(method){
-  if(method === 'Dinheiro') return 'Caixa';
-  if(method === 'Cartão') return 'Cartão';
-  if(['Pix','Boleto','Transferência'].includes(method)) return 'Banco';
+  if(method === 'Dinheiro') return 'Caixa físico';
+
+  if(
+    ['Pix','Boleto','Transferência','Cartão']
+      .includes(method)
+  ){
+    return 'Nubank';
+  }
+
   return 'Outro';
 }
+
+
+
+
+function cardInstallmentOptions(selected=1){
+  let html = '';
+
+  for(let i=1;i<=24;i++){
+    html += `
+      <option value="${i}" ${Number(selected) === i ? 'selected' : ''}>
+        ${i}x
+      </option>
+    `;
+  }
+
+  return html;
+}
+
+function calculateCardRow(row){
+  if(!row) return null;
+
+  const amount =
+    Number(
+      row.querySelector('.payment-amount')?.value || 0
+    );
+
+  const method =
+    row.querySelector('.payment-method-select')?.value || '';
+
+  row.classList.toggle(
+    'is-card',
+    method === 'Cartão'
+  );
+
+  if(method !== 'Cartão'){
+    return {
+      amount,
+      method,
+      account:
+        row.querySelector('.payment-account')?.value || ''
+    };
+  }
+
+  const cardType =
+    row.querySelector('.card-type').value;
+
+  const installmentsEl =
+    row.querySelector('.card-installments');
+
+  if(cardType === 'Débito'){
+    installmentsEl.value = '1';
+    installmentsEl.disabled = true;
+  }else{
+    installmentsEl.disabled = false;
+  }
+
+  const installments =
+    Number(
+      installmentsEl.value || 1
+    );
+
+  const feePercent =
+    Math.max(
+      0,
+      Number(
+        row.querySelector('.card-fee-percent').value || 0
+      )
+    );
+
+  const feeBearer =
+    row.querySelector('.card-fee-bearer').value;
+
+  const rate =
+    feePercent /
+    100;
+
+  let chargedValue =
+    amount;
+
+  let feeValue =
+    0;
+
+  let netValue =
+    amount;
+
+  if(
+    amount > 0 &&
+    rate > 0
+  ){
+    if(feeBearer === 'Cliente'){
+      chargedValue =
+        amount /
+        (
+          1 - rate
+        );
+
+      feeValue =
+        chargedValue -
+        amount;
+
+      netValue =
+        amount;
+    }else{
+      feeValue =
+        amount *
+        rate;
+
+      netValue =
+        amount -
+        feeValue;
+    }
+  }
+
+  const round2 =
+    value =>
+      Math.round(
+        Number(value || 0) *
+        100
+      ) /
+      100;
+
+  chargedValue =
+    round2(chargedValue);
+
+  feeValue =
+    round2(feeValue);
+
+  netValue =
+    round2(netValue);
+
+  row.querySelector('.card-charged-value').textContent =
+    money(chargedValue);
+
+  row.querySelector('.card-fee-value').textContent =
+    money(feeValue);
+
+  row.querySelector('.card-net-value').textContent =
+    money(netValue);
+
+  const mode =
+    row.querySelector('.card-settlement-mode').value;
+
+  const days =
+    row.querySelector('.card-first-days');
+
+  if(
+    !days.dataset.changed
+  ){
+    days.value =
+      cardType === 'Débito'
+        ? 1
+        : (
+            mode === 'Antecipado'
+              ? 1
+              : 30
+          );
+  }
+
+  return {
+    method,
+    amount,
+    account:
+      row.querySelector('.payment-account').value,
+    cardType,
+    installments,
+    feePercent,
+    feeBearer,
+    authorization:
+      row.querySelector('.card-authorization').value.trim(),
+    chargedValue,
+    feeValue,
+    netValue,
+    settlementMode:
+      mode,
+    firstCreditDays:
+      Number(
+        days.value || 0
+      )
+  };
+}
+
+function updateCardRow(row){
+  calculateCardRow(row);
+  updatePaymentsSummary();
+}
+
 
 function addPaymentRow(amount=null,method=null,account=null){
   if(!currentTitle) return;
 
-  const rows = document.querySelectorAll('.payment-row');
-  const already = [...rows].reduce(
-    (sum,row) =>
-      sum +
-      Number(
-        row.querySelector('.payment-amount').value || 0
-      ),
-    0
-  );
+  const rows =
+    document.querySelectorAll('.payment-row');
+
+  const already =
+    [...rows].reduce(
+      (sum,row) =>
+        sum +
+        Number(
+          row.querySelector('.payment-amount').value || 0
+        ),
+      0
+    );
 
   let initialAmount =
     amount !== null
@@ -1432,8 +1683,11 @@ function addPaymentRow(amount=null,method=null,account=null){
       suggestedAccount(initialMethod)
     );
 
-  const wrapper = document.createElement('div');
-  wrapper.className = 'payment-row';
+  const wrapper =
+    document.createElement('div');
+
+  wrapper.className =
+    'payment-row';
 
   wrapper.innerHTML = `
     <div class="payment-method">
@@ -1449,13 +1703,18 @@ function addPaymentRow(amount=null,method=null,account=null){
         min="0.01"
         step="0.01"
         value="${initialAmount > 0 ? initialAmount.toFixed(2) : ''}"
+        title="Valor que será abatido do título"
       >
     </div>
 
     <div>
-      <select class="payment-account">
-        ${paymentAccountOptions(initialAccount)}
-      </select>
+      <input
+        class="payment-account"
+        type="text"
+        list="accountSuggestions"
+        value="${esc(initialAccount)}"
+        placeholder="Nubank, Mercado Pago..."
+      >
     </div>
 
     <div>
@@ -1466,40 +1725,211 @@ function addPaymentRow(amount=null,method=null,account=null){
         onclick="removePaymentRow(this)"
       >×</button>
     </div>
+
+    <div class="card-details">
+      <div class="card-grid">
+        <div>
+          <label>Modalidade</label>
+          <select class="card-type">
+            <option value="Crédito">Crédito</option>
+            <option value="Débito">Débito</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Parcelas</label>
+          <select class="card-installments">
+            ${cardInstallmentOptions(1)}
+          </select>
+        </div>
+
+        <div>
+          <label>Taxa total da operadora (%)</label>
+          <input
+            class="card-fee-percent"
+            type="number"
+            min="0"
+            max="30"
+            step="0.01"
+            value="0"
+          >
+        </div>
+
+        <div>
+          <label>Taxa assumida por</label>
+          <select class="card-fee-bearer">
+            <option value="Campello">Campello</option>
+            <option value="Cliente">Cliente</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Autorização / NSU</label>
+          <input
+            class="card-authorization"
+            type="text"
+            placeholder="Opcional"
+          >
+        </div>
+
+        <div>
+          <label>Recebimento da operadora</label>
+          <select class="card-settlement-mode">
+            <option value="Conforme parcelas">Conforme parcelas</option>
+            <option value="Antecipado">Antecipado</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Prazo do 1º crédito (dias)</label>
+          <input
+            class="card-first-days"
+            type="number"
+            min="0"
+            step="1"
+            value="30"
+          >
+        </div>
+      </div>
+
+      <div class="card-calc">
+        <div class="card-calc-item">
+          <span>Valor cobrado no cartão</span>
+          <strong class="card-charged-value">R$ 0,00</strong>
+        </div>
+
+        <div class="card-calc-item">
+          <span>Taxa da operadora</span>
+          <strong class="card-fee-value">R$ 0,00</strong>
+        </div>
+
+        <div class="card-calc-item">
+          <span>Líquido Campello</span>
+          <strong class="card-net-value">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <div class="card-info">
+        A <strong>Conta / Instituição</strong> identifica onde o dinheiro será recebido,
+        por exemplo Nubank, Mercado Pago ou PicPay.
+        Se <strong>Campello</strong> absorver a taxa, o valor líquido ficará menor.
+        Se escolher <strong>Cliente</strong>, o valor cobrado no cartão é ajustado
+        para que o líquido da Campello corresponda ao valor aplicado ao título.
+      </div>
+    </div>
   `;
 
-  $('paymentRows').appendChild(wrapper);
+  $('paymentRows')
+    .appendChild(
+      wrapper
+    );
 
   const methodSelect =
-    wrapper.querySelector('.payment-method-select');
+    wrapper.querySelector(
+      '.payment-method-select'
+    );
 
-  methodSelect.addEventListener('change',()=>{
-    const accountSelect =
-      wrapper.querySelector('.payment-account');
+  methodSelect.addEventListener(
+    'change',
+    () => {
+      const accountSelect =
+        wrapper.querySelector(
+          '.payment-account'
+        );
 
-    accountSelect.value =
-      suggestedAccount(
-        methodSelect.value
+      accountSelect.value =
+        suggestedAccount(
+          methodSelect.value
+        );
+
+      updateCardRow(
+        wrapper
       );
-
-    updatePaymentsSummary();
-  });
+    }
+  );
 
   wrapper
-    .querySelector('.payment-amount')
+    .querySelector(
+      '.payment-amount'
+    )
     .addEventListener(
       'input',
-      updatePaymentsSummary
+      () =>
+        updateCardRow(
+          wrapper
+        )
     );
 
   wrapper
-    .querySelector('.payment-account')
+    .querySelector(
+      '.payment-account'
+    )
     .addEventListener(
       'change',
       updatePaymentsSummary
     );
 
-  updatePaymentsSummary();
+  [
+    '.card-type',
+    '.card-installments',
+    '.card-fee-percent',
+    '.card-fee-bearer',
+    '.card-authorization',
+    '.card-settlement-mode'
+  ].forEach(
+    selector => {
+      wrapper
+        .querySelector(
+          selector
+        )
+        .addEventListener(
+          'change',
+          () =>
+            updateCardRow(
+              wrapper
+            )
+        );
+    }
+  );
+
+  wrapper
+    .querySelector(
+      '.card-fee-percent'
+    )
+    .addEventListener(
+      'input',
+      () =>
+        updateCardRow(
+          wrapper
+        )
+    );
+
+  const days =
+    wrapper.querySelector(
+      '.card-first-days'
+    );
+
+  days.addEventListener(
+    'input',
+    () => {
+      days.dataset.changed =
+        '1';
+
+      updatePaymentsSummary();
+    }
+  );
+
+  if(
+    initialMethod === 'Cartão'
+  ){
+    wrapper.classList.add(
+      'is-card'
+    );
+  }
+
+  updateCardRow(
+    wrapper
+  );
 }
 
 function removePaymentRow(button){
@@ -1518,16 +1948,12 @@ function removePaymentRow(button){
 function getPaymentRows(){
   return [
     ...document.querySelectorAll('.payment-row')
-  ].map(row => ({
-    method:
-      row.querySelector('.payment-method-select').value,
-    amount:
-      Number(
-        row.querySelector('.payment-amount').value || 0
-      ),
-    account:
-      row.querySelector('.payment-account').value
-  }));
+  ].map(
+    row =>
+      calculateCardRow(
+        row
+      )
+  );
 }
 
 function updatePaymentsSummary(){
@@ -1679,9 +2105,32 @@ async function loadHistory(titleId){
           <div>
             ${esc(h.date || '')}
             ${h.paymentMethod ? ' · ' + esc(h.paymentMethod) : ''}
+            ${
+              h.paymentMethod === 'Cartão' && h.cardType
+                ? ' ' + esc(h.cardType)
+                : ''
+            }
+            ${
+              h.paymentMethod === 'Cartão' && h.installments
+                ? ' ' + esc(h.installments) + 'x'
+                : ''
+            }
             ${h.account ? ' · ' + esc(h.account) : ''}
             ${h.responsible ? ' · por ' + esc(h.responsible) : ''}
           </div>
+
+          ${
+            h.paymentMethod === 'Cartão'
+              ? `<div class="history-meta">
+                   Conta: ${esc(h.account || '-')} ·
+                   Taxa ${Number(h.feePercent || 0).toLocaleString('pt-BR',{maximumFractionDigits:2})}% (${esc(h.feeBearer || 'Campello')})
+                   · Taxa: ${money(h.feeValue || 0)}
+                   · Líquido: ${money(h.netValue || 0)}
+                   · Cobrado: ${money(h.chargedValue || h.amount)}
+                   ${h.authorization ? ' · NSU: ' + esc(h.authorization) : ''}
+                 </div>`
+              : ''
+          }
 
           <div class="history-meta">
             Saldo: ${money(h.balanceBefore)} → ${money(h.balanceAfter)}
@@ -2042,6 +2491,26 @@ async function confirmSettlement(){
   if(invalid){
     toast(
       'Confira forma, valor e conta de todos os pagamentos.'
+    );
+    return;
+  }
+
+  const invalidCard =
+    payments.some(
+      item =>
+        item.method === 'Cartão' &&
+        (
+          !['Crédito','Débito'].includes(item.cardType) ||
+          Number(item.installments || 0) < 1 ||
+          Number(item.installments || 0) > 24 ||
+          Number(item.feePercent || 0) < 0 ||
+          Number(item.feePercent || 0) > 30
+        )
+    );
+
+  if(invalidCard){
+    toast(
+      'Confira modalidade, parcelas e taxa do pagamento em cartão.'
     );
     return;
   }
