@@ -163,6 +163,52 @@ body{padding:22px}
 const API_URL = 'https://script.google.com/macros/s/AKfycbxPZaI7aJJ8uLcTX8LtiePLsugCGTFsLFVAuGvsvLNz9BPqqlM2oKi-zU9HNkRWPCIitA/exec';
 const TOKEN_KEY = 'campello_auth_token';
 const USER_KEY = 'campello_auth_user';
+const AUTH_BRIDGE_KEY = 'campello_auth_tab_bridge';
+
+function consumeAuthBridge(){
+  if(
+    sessionStorage.getItem(TOKEN_KEY) ||
+    localStorage.getItem(TOKEN_KEY)
+  ){
+    return;
+  }
+
+  try{
+    const raw = localStorage.getItem(AUTH_BRIDGE_KEY);
+    if(!raw) return;
+
+    const bridge = JSON.parse(raw);
+
+    if(
+      !bridge ||
+      !bridge.token ||
+      !bridge.user ||
+      Number(bridge.expiresAt || 0) < Date.now()
+    ){
+      localStorage.removeItem(AUTH_BRIDGE_KEY);
+      return;
+    }
+
+    sessionStorage.setItem(
+      TOKEN_KEY,
+      bridge.token
+    );
+
+    sessionStorage.setItem(
+      USER_KEY,
+      JSON.stringify(bridge.user)
+    );
+
+    localStorage.removeItem(AUTH_BRIDGE_KEY);
+
+  }catch(e){
+    try{
+      localStorage.removeItem(AUTH_BRIDGE_KEY);
+    }catch(_){}
+  }
+}
+
+consumeAuthBridge();
 
 function esc(v){
   return String(v ?? '').replace(/[&<>"']/g,m=>({
@@ -261,15 +307,32 @@ async function loadOrder(id){
   let snapshot=null;
 
   /*
-   * O snapshot continua existindo como segurança, porém agora a
-   * consulta atual da API tem prioridade. Isso garante que nomes
-   * corrigidos no cadastro mestre apareçam no espelho imediatamente.
+   * O pedido que abriu esta guia deixa um snapshot temporário
+   * compartilhado no localStorage. Ele é removido após a leitura.
    */
   try{
-    const raw=sessionStorage.getItem('campello_mirror_'+id);
-    if(raw) snapshot=JSON.parse(raw);
+    const key='campello_mirror_snapshot_'+id;
+    const raw=localStorage.getItem(key);
+
+    if(raw){
+      const stored=JSON.parse(raw);
+
+      if(
+        stored &&
+        stored.order &&
+        Number(stored.expiresAt || 0) >= Date.now()
+      ){
+        snapshot=stored.order;
+      }
+
+      localStorage.removeItem(key);
+    }
   }catch(e){}
 
+  /*
+   * A API atualizada continua tendo prioridade para trazer o nome
+   * real dos produtos. O snapshot serve como fallback.
+   */
   try{
     order=await fetchOrder(id);
   }catch(err){

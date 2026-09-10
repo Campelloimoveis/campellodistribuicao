@@ -115,6 +115,90 @@ function authLoginPage(){
   );
 }
 
+
+const CAMPELLO_AUTH_BRIDGE_KEY = 'campello_auth_tab_bridge';
+
+function publishAuthBridge(){
+  const token = getAuthToken();
+  const user = getAuthUser();
+
+  if(!token || !user) return;
+
+  try{
+    localStorage.setItem(
+      CAMPELLO_AUTH_BRIDGE_KEY,
+      JSON.stringify({
+        token,
+        user,
+        expiresAt: Date.now() + 30000
+      })
+    );
+  }catch(e){}
+}
+
+function consumeAuthBridge(){
+  /*
+   * Se esta guia já possui sessão, não precisamos importar nada.
+   */
+  if(
+    sessionStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY) ||
+    localStorage.getItem(CAMPELLO_AUTH_TOKEN_KEY)
+  ){
+    return;
+  }
+
+  try{
+    const raw = localStorage.getItem(CAMPELLO_AUTH_BRIDGE_KEY);
+    if(!raw) return;
+
+    const bridge = JSON.parse(raw);
+
+    if(
+      !bridge ||
+      !bridge.token ||
+      !bridge.user ||
+      Number(bridge.expiresAt || 0) < Date.now()
+    ){
+      localStorage.removeItem(CAMPELLO_AUTH_BRIDGE_KEY);
+      return;
+    }
+
+    sessionStorage.setItem(
+      CAMPELLO_AUTH_TOKEN_KEY,
+      bridge.token
+    );
+
+    sessionStorage.setItem(
+      CAMPELLO_AUTH_USER_KEY,
+      JSON.stringify(bridge.user)
+    );
+
+    /*
+     * A ponte é de uso curto: após ser consumida, apagamos.
+     */
+    localStorage.removeItem(CAMPELLO_AUTH_BRIDGE_KEY);
+
+  }catch(e){
+    try{
+      localStorage.removeItem(CAMPELLO_AUTH_BRIDGE_KEY);
+    }catch(_){}
+  }
+}
+
+/*
+ * Toda nova guia aberta por link recebe uma ponte temporária de sessão.
+ */
+document.addEventListener('click', event => {
+  const link = event.target.closest('a[target="_blank"]');
+
+  if(link){
+    publishAuthBridge();
+  }
+});
+
+consumeAuthBridge();
+
+
 function requireLocalAuth(allowedProfiles){
   const token = getAuthToken();
   const user = getAuthUser();
