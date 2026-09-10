@@ -1643,6 +1643,16 @@ function renderActions(){
     );
   }
 
+  if(
+    CURRENT_AUTH_USER &&
+    CURRENT_AUTH_USER.profile === 'ADMINISTRATIVO' &&
+    ['Orçamento','Pedido aberto','Separação','Cancelado'].includes(status)
+  ){
+    actions.push(
+      `<button class="btn btn-danger" onclick="deleteCurrentOrder()">Excluir pedido</button>`
+    );
+  }
+
   $('modalActions').innerHTML =
     actions.join('');
 }
@@ -1908,6 +1918,164 @@ async function saveOrderEdit(){
   }
 }
 
+
+function submitOrderDelete(payload){
+  return new Promise((resolve,reject)=>{
+    const requestId = uniqueId();
+
+    payload.kind = 'orderDelete';
+    payload.requestId = requestId;
+    payload.authToken = getAuthToken();
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = API_URL;
+    form.target = 'apiPostFrame';
+    form.style.display = 'none';
+
+    const data = document.createElement('input');
+    data.type = 'hidden';
+    data.name = 'payload';
+    data.value = JSON.stringify(payload);
+
+    form.appendChild(data);
+    document.body.appendChild(form);
+    form.submit();
+
+    setTimeout(()=>form.remove(),1500);
+
+    const started = Date.now();
+
+    const poll = async () => {
+      if(Date.now() - started > 30000){
+        reject(
+          new Error(
+            'A exclusão pode ter sido concluída, mas a confirmação demorou. Atualize a lista antes de tentar novamente.'
+          )
+        );
+        return;
+      }
+
+      try{
+        const status = await apiGet(
+          'orderDeleteStatus',
+          {requestId},
+          8000
+        );
+
+        if(status.pending){
+          setTimeout(poll,700);
+          return;
+        }
+
+        if(!status.ok){
+          reject(
+            new Error(
+              status.erro ||
+              'Não foi possível excluir o pedido.'
+            )
+          );
+          return;
+        }
+
+        resolve(status.result);
+
+      }catch(err){
+        setTimeout(poll,900);
+      }
+    };
+
+    setTimeout(poll,700);
+  });
+}
+
+
+async function deleteCurrentOrder(){
+  if(!currentOrder){
+    return;
+  }
+
+  if(
+    !CURRENT_AUTH_USER ||
+    CURRENT_AUTH_USER.profile !== 'ADMINISTRATIVO'
+  ){
+    toast('Somente o Administrativo pode excluir pedidos.');
+    return;
+  }
+
+  const status = currentOrder.status || '';
+
+  if(
+    ['Faturado','Entregue'].includes(status)
+  ){
+    toast(
+      'Pedido faturado não pode ser excluído diretamente. Será necessário estorno.'
+    );
+    return;
+  }
+
+  const texto = prompt(
+    'Excluir DEFINITIVAMENTE ' +
+    currentOrder.id +
+    '?\n\n' +
+    'O pedido e todos os itens vinculados serão removidos.\n' +
+    (
+      status === 'Separação'
+        ? 'A reserva física também será liberada.\n'
+        : ''
+    ) +
+    '\nDigite EXCLUIR para confirmar:'
+  );
+
+  if(
+    String(texto || '')
+      .trim()
+      .toUpperCase() !==
+    'EXCLUIR'
+  ){
+    return;
+  }
+
+  const id = currentOrder.id;
+
+  try{
+    const result = await submitOrderDelete({
+      orderId:id,
+      confirmation:'EXCLUIR'
+    });
+
+    toast(
+      result.message ||
+      'Pedido excluído.'
+    );
+
+    closeOrder();
+    await loadOrders();
+
+  }catch(err){
+    const message =
+      err.message ||
+      String(err);
+
+    if(
+      /sessão|login novamente/i.test(message)
+    ){
+      toast(
+        'Sua sessão não está ativa. Faça login novamente.'
+      );
+
+      setTimeout(()=>{
+        location.href = authLoginPage();
+      },1200);
+
+      return;
+    }
+
+    toast(message);
+  }
+}
+
+
 function submitWorkflow(payload){
   return new Promise((resolve,reject)=>{
     const requestId =
@@ -1918,6 +2086,9 @@ function submitWorkflow(payload){
 
     payload.requestId =
       requestId;
+
+    payload.authToken =
+      getAuthToken();
 
     const form =
       document.createElement('form');
@@ -1940,7 +2111,7 @@ function submitWorkflow(payload){
     data.type = 'hidden';
     data.name = 'payload';
     data.value =
-      JSON.stringify(payload);
+      JSON.stringify(Object.assign({}, payload, {authToken:getAuthToken()}));
 
     form.appendChild(req);
     form.appendChild(data);

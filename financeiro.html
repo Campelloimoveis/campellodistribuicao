@@ -1422,7 +1422,7 @@ function submitSettlement(payload){
     data.type = 'hidden';
     data.name = 'payload';
     data.value =
-      JSON.stringify(payload);
+      JSON.stringify(Object.assign({}, payload, {authToken:getAuthToken()}));
 
     form.appendChild(req);
     form.appendChild(data);
