@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Espelho do Pedido — Campello Distribuição</title>
+<meta name="theme-color" content="#1A365D">
+
+<style>
+:root{
+  --navy:#1A365D;
+  --orange:#DD6B20;
+  --dark:#2D3748;
+  --muted:#718096;
+  --line:#CBD5E0;
+  --light:#F7FAFC;
+  --red:#B42318;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#edf2f7;color:var(--dark);font-family:Arial,Helvetica,sans-serif}
+body{padding:22px}
+.toolbar{
+  width:min(1050px,100%);
+  margin:0 auto 12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.toolbar-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{
+  border:0;border-radius:8px;padding:10px 14px;font-weight:700;font-size:12px;cursor:pointer;
+}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-light{background:#fff;color:var(--navy);border:1px solid #d3dde7}
+.search-box{display:flex;gap:7px}
+.search-box input{
+  min-width:220px;height:38px;border:1px solid #cbd5e0;border-radius:8px;padding:0 10px;
+}
+.sheet{
+  width:min(1050px,100%);
+  min-height:740px;
+  margin:auto;
+  background:#fff;
+  box-shadow:0 10px 35px rgba(26,54,93,.13);
+  padding:26px;
+}
+.fiscal-warning{
+  border:2px solid var(--red);
+  color:var(--red);
+  text-align:center;
+  font-weight:900;
+  letter-spacing:.06em;
+  padding:8px;
+  margin-bottom:10px;
+  font-size:12px;
+}
+.header-grid{
+  display:grid;
+  grid-template-columns:1.25fr .75fr;
+  border:1px solid var(--dark);
+}
+.company{
+  padding:14px;
+  display:flex;
+  align-items:center;
+  gap:15px;
+  min-height:110px;
+}
+.company img{width:105px;height:80px;object-fit:contain}
+.company-text h1{font-size:21px;color:var(--navy);margin:0 0 4px}
+.company-text p{margin:2px 0;font-size:10px;line-height:1.35}
+.doc-box{border-left:1px solid var(--dark);display:grid;grid-template-rows:auto 1fr}
+.doc-title{
+  background:var(--navy);color:#fff;text-align:center;padding:9px;font-size:15px;font-weight:900;
+}
+.doc-meta{display:grid;grid-template-columns:1fr 1fr}
+.doc-meta div{padding:11px;border-top:1px solid var(--dark);font-size:10px}
+.doc-meta div:nth-child(even){border-left:1px solid var(--dark)}
+.doc-meta strong{display:block;font-size:12px;color:var(--navy);margin-top:4px}
+.section-title{
+  margin-top:10px;background:#edf2f7;border:1px solid var(--dark);border-bottom:0;
+  padding:6px 8px;font-size:10px;font-weight:900;text-transform:uppercase;
+}
+.info-grid{
+  border:1px solid var(--dark);
+  display:grid;
+  grid-template-columns:1.4fr .8fr .8fr;
+}
+.info-cell{padding:7px 8px;min-height:49px;border-right:1px solid var(--line);font-size:9px}
+.info-cell:last-child{border-right:0}
+.info-cell label{display:block;font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px}
+.info-cell strong{font-size:10px}
+.info-grid.four{grid-template-columns:1fr 1fr 1fr 1fr}
+.items{width:100%;border-collapse:collapse;border:1px solid var(--dark);font-size:9px}
+.items th{background:var(--navy);color:#fff;padding:7px 6px;border-right:1px solid #ffffff55;text-align:left}
+.items td{padding:7px 6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);vertical-align:top}
+.items th:last-child,.items td:last-child{border-right:0}
+.right{text-align:right!important}
+.center{text-align:center!important}
+.items .desc{font-weight:700}
+.totals-wrap{display:grid;grid-template-columns:1fr 340px;border:1px solid var(--dark);border-top:0}
+.notes{padding:10px;border-right:1px solid var(--dark);font-size:9px;min-height:120px;line-height:1.5}
+.notes strong{display:block;margin-bottom:5px;color:var(--navy)}
+.totals{width:100%;border-collapse:collapse;font-size:10px}
+.totals td{padding:7px 9px;border-bottom:1px solid var(--line)}
+.totals td:last-child{text-align:right;font-weight:700}
+.totals tr.total td{background:#edf2f7;color:var(--navy);font-weight:900;font-size:12px;border-bottom:0}
+.conditions{margin-top:10px;border:1px solid var(--dark);padding:10px;font-size:9px;line-height:1.55}
+.conditions strong{color:var(--navy)}
+.footer{display:flex;justify-content:space-between;gap:15px;margin-top:15px;padding-top:9px;border-top:1px solid #cbd5e0;font-size:8px;color:var(--muted)}
+.loading{padding:60px;text-align:center;color:var(--muted)}
+.error{padding:18px;background:#fff1f2;border:1px solid #fecaca;color:#991b1b;border-radius:8px;margin:15px 0;font-size:12px}
+.status{
+  display:inline-block;padding:4px 7px;border-radius:99px;background:#edf2f7;color:var(--navy);font-size:9px;font-weight:800;
+}
+@media(max-width:720px){
+  body{padding:8px}
+  .sheet{padding:12px}
+  .header-grid{grid-template-columns:1fr}
+  .doc-box{border-left:0;border-top:1px solid var(--dark)}
+  .company{min-height:90px}
+  .company img{width:75px;height:60px}
+  .company-text h1{font-size:17px}
+  .info-grid,.info-grid.four{grid-template-columns:1fr 1fr}
+  .info-cell:nth-child(2n){border-right:0}
+  .totals-wrap{grid-template-columns:1fr}
+  .notes{border-right:0;border-bottom:1px solid var(--dark);min-height:70px}
+  .items-wrap{overflow:auto}
+  .items{min-width:730px}
+  .search-box input{min-width:150px;width:48vw}
+}
+@media print{
+  @page{size:A4;margin:8mm}
+  html,body{background:#fff;padding:0}
+  .toolbar{display:none!important}
+  .sheet{width:100%;min-height:0;padding:0;box-shadow:none}
+  .fiscal-warning{margin-top:0}
+  .footer{position:relative}
+}
+</style>
+</head>
+
+<body>
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button class="btn btn-light" onclick="history.back()">← Voltar</button>
+    <button class="btn btn-primary" onclick="window.print()">Imprimir / Salvar PDF</button>
+  </div>
+
+  <div class="search-box">
+    <input id="orderSearch" placeholder="PED-AAAA-MMDD-..." autocomplete="off">
+    <button class="btn btn-light" onclick="loadByTypedId()">Carregar pedido</button>
+  </div>
+</div>
+
+<main id="sheet" class="sheet">
+  <div class="loading">Carregando espelho do pedido...</div>
+</main>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbxPZaI7aJJ8uLcTX8LtiePLsugCGTFsLFVAuGvsvLNz9BPqqlM2oKi-zU9HNkRWPCIitA/exec';
+const TOKEN_KEY = 'campello_auth_token';
+const USER_KEY = 'campello_auth_user';
+
+function esc(v){
+  return String(v ?? '').replace(/[&<>"']/g,m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  }[m]));
+}
+
+function money(v){
+  return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+}
+
+function qty(v){
+  return Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:3});
+}
+
+function getToken(){
+  return sessionStorage.getItem(TOKEN_KEY) ||
+         localStorage.getItem(TOKEN_KEY) || '';
+}
+
+function apiGet(action,params={},timeout=18000){
+  return new Promise((resolve,reject)=>{
+    const callback='__mirror_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const script=document.createElement('script');
+
+    const query=new URLSearchParams({
+      action,
+      callback,
+      _:String(Date.now()),
+      token:getToken(),
+      ...params
+    });
+
+    const timer=setTimeout(()=>{
+      cleanup();
+      reject(new Error('A API demorou para responder.'));
+    },timeout);
+
+    function cleanup(){
+      clearTimeout(timer);
+      script.remove();
+      try{delete window[callback]}catch(e){}
+    }
+
+    window[callback]=data=>{cleanup();resolve(data)};
+    script.onerror=()=>{cleanup();reject(new Error('Não foi possível conectar ao servidor.'))};
+    script.src=API_URL+'?'+query.toString();
+    document.body.appendChild(script);
+  });
+}
+
+function getOrderId(){
+  return new URLSearchParams(location.search).get('id') || '';
+}
+
+async function enrichClient(order){
+  if(!order.clientId) return null;
+
+  try{
+    const data=await apiGet('clients',{q:order.clientId},9000);
+    if(!data.ok) return null;
+    return (data.clientes||[]).find(c=>c.id===order.clientId) || null;
+  }catch(e){
+    return null;
+  }
+}
+
+async function fetchOrder(id){
+  const data=await apiGet('orders',{q:id,limit:20},20000);
+
+  if(!data.ok){
+    throw new Error(data.erro || 'Não foi possível consultar o pedido.');
+  }
+
+  const order=(data.pedidos||[]).find(p=>p.id===id);
+
+  if(!order){
+    throw new Error('Pedido '+id+' não encontrado.');
+  }
+
+  return order;
+}
+
+async function loadOrder(id){
+  id=String(id||'').trim();
+
+  if(!id){
+    showSearchMessage();
+    return;
+  }
+
+  document.getElementById('orderSearch').value=id;
+  document.getElementById('sheet').innerHTML='<div class="loading">Carregando '+esc(id)+'...</div>';
+
+  let order=null;
+
+  /*
+   * Primeiro tenta usar o snapshot enviado pela tela de Pedidos.
+   * Assim o espelho abre instantaneamente mesmo se a API estiver lenta.
+   */
+  try{
+    const raw=sessionStorage.getItem('campello_mirror_'+id);
+    if(raw) order=JSON.parse(raw);
+  }catch(e){}
+
+  if(!order){
+    try{
+      order=await fetchOrder(id);
+    }catch(err){
+      showError(err.message||String(err),id);
+      return;
+    }
+  }
+
+  const client=await enrichClient(order);
+  renderMirror(order,client);
+
+  document.title='Espelho '+order.id+' — Campello Distribuição';
+}
+
+function showSearchMessage(){
+  document.getElementById('sheet').innerHTML=`
+    <div class="loading">
+      Informe o número do pedido acima para gerar o espelho.
+    </div>
+  `;
+}
+
+function showError(message,id){
+  let extra='';
+
+  if(/sessão|perfil|acesso|login/i.test(message)){
+    extra=`
+      <p style="margin-top:9px">
+        A API publicada está exigindo login. Se você abriu este espelho pelo botão
+        dentro de Pedidos, mantenha a sessão da intranet ativa.
+      </p>
+    `;
+  }
+
+  document.getElementById('sheet').innerHTML=`
+    <div class="error">
+      <strong>Não foi possível gerar o espelho.</strong><br><br>
+      ${esc(message)}
+      ${extra}
+    </div>
+  `;
+}
+
+function renderMirror(order,client){
+  const items=order.items||[];
+
+  const subtotal=Number(order.subtotal||items.reduce((s,i)=>s+Number(i.total||0),0));
+  const freight=Number(order.freight||0);
+  const discount=Number(order.discount||0);
+  const total=Number(order.total||Math.max(0,subtotal+freight-discount));
+
+  const clientDoc=client?.document||'';
+  const clientPhone=client?.whatsapp||client?.contato||'';
+  const clientEmail=client?.email||'';
+  const cityUf=[client?.cidade,client?.uf].filter(Boolean).join(' / ');
+
+  const rows=items.map((item,index)=>{
+    const price=Number(
+      item.effectivePrice ??
+      item.negotiatedPrice ??
+      item.tablePrice ??
+      0
+    );
+
+    const lineTotal=Number(
+      item.total ??
+      (Number(item.qty||0)*price)
+    );
+
+    return `
+      <tr>
+        <td class="center">${index+1}</td>
+        <td>${esc(item.sku||'')}</td>
+        <td class="desc">${esc(item.name||'')}</td>
+        <td class="center">${esc(item.unit||'UN')}</td>
+        <td class="right">${qty(item.qty)}</td>
+        <td class="right">${money(price)}</td>
+        <td class="right">${money(lineTotal)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('sheet').innerHTML=`
+    <div class="fiscal-warning">SEM VALOR FISCAL — NÃO É NOTA FISCAL</div>
+
+    <section class="header-grid">
+      <div class="company">
+        <img src="imagens/logo-campello.png" alt="Campello Distribuição"
+             onerror="this.style.display='none'">
+        <div class="company-text">
+          <h1>CAMPELLO DISTRIBUIÇÃO</h1>
+          <p><strong>Documento comercial para conferência</strong></p>
+          <p>Contato comercial: (31) 99745-7406</p>
+          <p>gladston.campello@gmail.com</p>
+        </div>
+      </div>
+
+      <div class="doc-box">
+        <div class="doc-title">ESPELHO DO PEDIDO</div>
+        <div class="doc-meta">
+          <div>NÚMERO<strong>${esc(order.id)}</strong></div>
+          <div>DATA<strong>${esc(order.date||'-')}</strong></div>
+          <div>STATUS<strong><span class="status">${esc(order.status||'-')}</span></strong></div>
+          <div>PREVISÃO<strong>${esc(order.forecast||'-')}</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-title">Destinatário / Cliente</div>
+    <section class="info-grid">
+      <div class="info-cell">
+        <label>Nome / Razão Social</label>
+        <strong>${esc(order.client||'-')}</strong>
+      </div>
+      <div class="info-cell">
+        <label>CNPJ / CPF</label>
+        <strong>${esc(clientDoc||'-')}</strong>
+      </div>
+      <div class="info-cell">
+        <label>ID Cliente</label>
+        <strong>${esc(order.clientId||'-')}</strong>
+      </div>
+    </section>
+
+    <section class="info-grid four" style="border-top:0">
+      <div class="info-cell"><label>Telefone / WhatsApp</label><strong>${esc(clientPhone||'-')}</strong></div>
+      <div class="info-cell"><label>E-mail</label><strong>${esc(clientEmail||'-')}</strong></div>
+      <div class="info-cell"><label>Cidade / UF</label><strong>${esc(cityUf||'-')}</strong></div>
+      <div class="info-cell"><label>Representante</label><strong>${esc(order.seller||'Nenhum')}</strong></div>
+    </section>
+
+    <div class="section-title">Condições do pedido</div>
+    <section class="info-grid four">
+      <div class="info-cell"><label>Condição de pagamento</label><strong>${esc(order.condition||'-')}</strong></div>
+      <div class="info-cell"><label>Forma de pagamento</label><strong>${esc(order.payment||'-')}</strong></div>
+      <div class="info-cell"><label>Quantidade de itens</label><strong>${items.length}</strong></div>
+      <div class="info-cell"><label>Situação financeira</label><strong>${esc(order.financialSituation||'-')}</strong></div>
+    </section>
+
+    <div class="section-title">Produtos / Serviços</div>
+    <div class="items-wrap">
+      <table class="items">
+        <thead>
+          <tr>
+            <th class="center" style="width:36px">ITEM</th>
+            <th style="width:95px">SKU / REF.</th>
+            <th>DESCRIÇÃO</th>
+            <th class="center" style="width:55px">UN.</th>
+            <th class="right" style="width:75px">QTD.</th>
+            <th class="right" style="width:105px">V. UNIT.</th>
+            <th class="right" style="width:110px">V. TOTAL</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || '<tr><td colspan="7" class="center">Nenhum item encontrado.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals-wrap">
+      <div class="notes">
+        <strong>OBSERVAÇÕES</strong>
+        ${esc(order.notes||'Sem observações.').replace(/\n/g,'<br>')}
+      </div>
+
+      <table class="totals">
+        <tr><td>Subtotal dos itens</td><td>${money(subtotal)}</td></tr>
+        <tr><td>Frete</td><td>${money(freight)}</td></tr>
+        <tr><td>Desconto</td><td>− ${money(discount)}</td></tr>
+        <tr class="total"><td>TOTAL DO PEDIDO</td><td>${money(total)}</td></tr>
+      </table>
+    </div>
+
+    <div class="conditions">
+      <strong>CONDIÇÕES COMERCIAIS</strong><br>
+      Entrega sujeita à confirmação da Campello Distribuição.
+      Prazo padrão de referência: até 7 dias úteis, conforme disponibilidade e condições acordadas.
+      Garantia conforme condições do fabricante.
+      Este documento é apenas um espelho comercial para conferência e <strong>não substitui NF-e, DANFE ou qualquer documento fiscal</strong>.
+    </div>
+
+    <footer class="footer">
+      <span>Campello Distribuição · Espelho gerado em ${new Date().toLocaleString('pt-BR')}</span>
+      <span>SEM VALOR FISCAL</span>
+    </footer>
+  `;
+}
+
+function loadByTypedId(){
+  const id=document.getElementById('orderSearch').value.trim();
+  if(id){
+    history.replaceState(null,'','?id='+encodeURIComponent(id));
+  }
+  loadOrder(id);
+}
+
+document.getElementById('orderSearch').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    loadByTypedId();
+  }
+});
+
+loadOrder(getOrderId());
+</script>
+</body>
+</html>
