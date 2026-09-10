@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Administrativo — Campello Distribuição</title>
+  <meta name="theme-color" content="#0b2b4f">
+
+  <style>
+    :root{
+      --navy:#0b2b4f;
+      --navy-2:#123f73;
+      --blue:#2f69a6;
+      --red:#d71920;
+      --green:#16834b;
+      --orange:#dd6b20;
+      --text:#15243a;
+      --muted:#6c7c8f;
+      --line:#dce4eb;
+      --bg:#f3f6f9;
+      --surface:#ffffff;
+      --soft:#edf3f7;
+      --shadow:0 10px 30px rgba(11,43,79,.08);
+    }
+
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
+
+    html,body{
+      min-height:100%;
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
+      background:var(--bg);
+    }
+
+    a{
+      color:inherit;
+      text-decoration:none;
+    }
+
+    button,input{
+      font:inherit;
+    }
+
+    body{
+      min-height:100vh;
+    }
+
+    .app{
+      min-height:100vh;
+      display:grid;
+      grid-template-columns:248px minmax(0,1fr);
+    }
+
+    /* SIDEBAR */
+    .sidebar{
+      position:sticky;
+      top:0;
+      height:100vh;
+      background:
+        radial-gradient(circle at 0 0, rgba(64,121,181,.28), transparent 32%),
+        linear-gradient(180deg,#0d3158 0%,#081f39 100%);
+      color:#fff;
+      padding:24px 16px 18px;
+      display:flex;
+      flex-direction:column;
+      z-index:50;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:11px;
+      padding:2px 8px 23px;
+      border-bottom:1px solid rgba(255,255,255,.11);
+      margin-bottom:18px;
+    }
+
+    .brand img{
+      width:46px;
+      height:46px;
+      object-fit:contain;
+      flex:0 0 auto;
+    }
+
+    .brand-copy strong{
+      display:block;
+      font-size:14px;
+      line-height:1.1;
+    }
+
+    .brand-copy span{
+      display:block;
+      font-size:10px;
+      color:rgba(255,255,255,.67);
+      margin-top:4px;
+    }
+
+    .nav-label{
+      padding:7px 11px;
+      color:rgba(255,255,255,.5);
+      font-size:9px;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      font-weight:800;
+    }
+
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .nav-link{
+      min-height:43px;
+      display:flex;
+      align-items:center;
+      gap:11px;
+      border-radius:10px;
+      padding:0 12px;
+      color:rgba(255,255,255,.82);
+      font-size:13px;
+      font-weight:650;
+      transition:.15s ease;
+    }
+
+    .nav-link:hover{
+      background:rgba(255,255,255,.09);
+      color:#fff;
+    }
+
+    .nav-link.active{
+      background:#fff;
+      color:var(--navy);
+      box-shadow:0 7px 18px rgba(0,0,0,.12);
+    }
+
+    .nav-link svg{
+      width:18px;
+      height:18px;
+      flex:0 0 auto;
+    }
+
+    .nav-link .tag{
+      margin-left:auto;
+      font-size:8px;
+      padding:3px 6px;
+      border-radius:99px;
+      background:rgba(255,255,255,.12);
+      color:rgba(255,255,255,.7);
+    }
+
+    .nav-link.active .tag{
+      background:var(--soft);
+      color:var(--muted);
+    }
+
+    .sidebar-bottom{
+      margin-top:auto;
+      padding-top:16px;
+    }
+
+    .catalog-link,
+    .logout-link{
+      min-height:40px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:0 11px;
+      border-radius:9px;
+      font-size:12px;
+      font-weight:650;
+    }
+
+    .catalog-link{
+      color:#fff;
+      background:rgba(255,255,255,.07);
+      margin-bottom:6px;
+    }
+
+    .logout-link{
+      color:#ffcbcf;
+    }
+
+    .catalog-link:hover,
+    .logout-link:hover{
+      background:rgba(255,255,255,.1);
+    }
+
+    /* MAIN */
+    .main{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .topbar{
+      height:72px;
+      background:rgba(255,255,255,.96);
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 28px;
+      position:sticky;
+      top:0;
+      z-index:35;
+      backdrop-filter:blur(8px);
+    }
+
+    .top-left{
+      display:flex;
+      align-items:center;
+      gap:14px;
+    }
+
+    .menu-btn{
+      display:none;
+      width:40px;
+      height:40px;
+      border:1px solid var(--line);
+      border-radius:9px;
+      background:#fff;
+      color:var(--navy);
+      cursor:pointer;
+    }
+
+    .page-title strong{
+      display:block;
+      font-size:15px;
+      color:var(--navy);
+    }
+
+    .page-title span{
+      display:block;
+      margin-top:3px;
+      font-size:10px;
+      color:var(--muted);
+    }
+
+    .user-box{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .user-avatar{
+      width:36px;
+      height:36px;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      background:var(--navy);
+      color:#fff;
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .user-copy{
+      text-align:right;
+    }
+
+    .user-copy strong{
+      display:block;
+      font-size:12px;
+    }
+
+    .user-copy span{
+      display:block;
+      font-size:9px;
+      color:var(--muted);
+      margin-top:2px;
+    }
+
+    .content{
+      width:min(100%, 1480px);
+      margin:0 auto;
+      padding:28px;
+    }
+
+    .welcome{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:18px;
+      margin-bottom:23px;
+    }
+
+    .welcome h1{
+      font-size:clamp(23px,2.5vw,31px);
+      color:var(--navy);
+      letter-spacing:-.025em;
+    }
+
+    .welcome p{
+      color:var(--muted);
+      margin-top:6px;
+      font-size:12px;
+      line-height:1.5;
+    }
+
+    .status-pill{
+      padding:8px 11px;
+      border-radius:99px;
+      background:#e9f6ef;
+      color:#167345;
+      border:1px solid #cfeadb;
+      font-size:10px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    /* CARDS */
+    .metrics{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:14px;
+      margin-bottom:22px;
+    }
+
+    .metric{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:17px;
+      box-shadow:0 3px 14px rgba(11,43,79,.035);
+      display:flex;
+      align-items:center;
+      gap:14px;
+      min-height:102px;
+    }
+
+    .metric-icon{
+      width:44px;
+      height:44px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      background:var(--soft);
+      color:var(--navy);
+      flex:0 0 auto;
+    }
+
+    .metric-icon svg{
+      width:21px;
+      height:21px;
+    }
+
+    .metric strong{
+      display:block;
+      color:var(--navy);
+      font-size:22px;
+      line-height:1;
+    }
+
+    .metric span{
+      display:block;
+      margin-top:6px;
+      color:var(--muted);
+      font-size:10px;
+      font-weight:650;
+    }
+
+    .metric small{
+      display:block;
+      margin-top:4px;
+      color:#97a3b0;
+      font-size:8px;
+    }
+
+    /* GRID PRINCIPAL */
+    .dashboard-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1.45fr) minmax(290px,.75fr);
+      gap:18px;
+    }
+
+    .panel{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:15px;
+      box-shadow:0 3px 14px rgba(11,43,79,.035);
+      overflow:hidden;
+    }
+
+    .panel-head{
+      padding:17px 18px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .panel-head strong{
+      font-size:13px;
+      color:var(--navy);
+    }
+
+    .panel-head span{
+      font-size:9px;
+      color:var(--muted);
+    }
+
+    .panel-body{
+      padding:18px;
+    }
+
+    .actions{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .action-card{
+      min-height:92px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:14px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      transition:.15s ease;
+      background:#fff;
+    }
+
+    .action-card:hover{
+      border-color:#b8c7d5;
+      transform:translateY(-1px);
+      box-shadow:0 7px 17px rgba(11,43,79,.06);
+    }
+
+    .action-icon{
+      width:39px;
+      height:39px;
+      display:grid;
+      place-items:center;
+      border-radius:10px;
+      background:#eef4f9;
+      color:var(--navy);
+      flex:0 0 auto;
+    }
+
+    .action-card strong{
+      display:block;
+      font-size:11px;
+    }
+
+    .action-card span{
+      display:block;
+      color:var(--muted);
+      font-size:9px;
+      margin-top:4px;
+      line-height:1.35;
+    }
+
+    .action-card.disabled{
+      opacity:.6;
+      cursor:not-allowed;
+    }
+
+    .action-card.disabled:hover{
+      transform:none;
+      box-shadow:none;
+      border-color:var(--line);
+    }
+
+    /* TABELA / PENDÊNCIAS */
+    .empty{
+      padding:46px 20px;
+      text-align:center;
+      color:var(--muted);
+    }
+
+    .empty-icon{
+      width:48px;
+      height:48px;
+      margin:0 auto 12px;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      background:var(--soft);
+      color:var(--navy);
+    }
+
+    .empty strong{
+      display:block;
+      font-size:12px;
+      color:var(--text);
+    }
+
+    .empty p{
+      font-size:9px;
+      margin-top:5px;
+      line-height:1.45;
+    }
+
+    /* RESPONSIVO */
+    .overlay{
+      display:none;
+    }
+
+    @media (max-width:1100px){
+      .metrics{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+
+      .dashboard-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width:760px){
+      .app{
+        display:block;
+      }
+
+      .sidebar{
+        position:fixed;
+        left:0;
+        top:0;
+        width:260px;
+        transform:translateX(-105%);
+        transition:.22s ease;
+        box-shadow:14px 0 35px rgba(0,0,0,.2);
+      }
+
+      .sidebar.open{
+        transform:translateX(0);
+      }
+
+      .overlay{
+        position:fixed;
+        inset:0;
+        background:rgba(4,18,31,.52);
+        z-index:45;
+      }
+
+      .overlay.show{
+        display:block;
+      }
+
+      .topbar{
+        height:64px;
+        padding:0 14px;
+      }
+
+      .menu-btn{
+        display:grid;
+        place-items:center;
+      }
+
+      .user-copy{
+        display:none;
+      }
+
+      .content{
+        padding:20px 14px 28px;
+      }
+
+      .welcome{
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      .metrics{
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+      }
+
+      .metric{
+        min-height:92px;
+        padding:13px;
+      }
+
+      .metric-icon{
+        width:39px;
+        height:39px;
+      }
+
+      .metric strong{
+        font-size:18px;
+      }
+
+      .actions{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width:440px){
+      .metrics{
+        grid-template-columns:1fr;
+      }
+
+      .metric{
+        min-height:80px;
+      }
+
+      .panel-head{
+        align-items:flex-start;
+        flex-direction:column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
+
+  <div class="app">
+
+    <aside id="sidebar" class="sidebar">
+      <div class="brand">
+        <img
+          src="imagens/logo-campello.png"
+          alt="Campello Distribuição"
+          onerror="this.style.display='none'"
+        >
+        <div class="brand-copy">
+          <strong>Campello Distribuição</strong>
+          <span>Intranet Administrativa</span>
+        </div>
+      </div>
+
+      <div class="nav-label">Operação</div>
+
+      <nav class="nav">
+        <a class="nav-link active" href="painel.html">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z"
+                  stroke="currentColor" stroke-width="1.7"/>
+          </svg>
+          Visão geral
+        </a>
+
+        <a class="nav-link" href="pedidos.html?status=Orçamento">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M6 3h12v18H6V3Zm3 5h6M9 12h6M9 16h4"
+                  stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          Orçamentos
+        </a>
+
+        <a class="nav-link" href="pedidos.html">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M5 6h14v14H5V6Zm3-3h8v3H8V3Zm1 8h6m-6 4h6"
+                  stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          Pedidos
+        </a>
+
+        <a class="nav-link" href="estoque.html">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="m4 8 8-4 8 4-8 4-8-4Zm0 0v8l8 4 8-4V8M12 12v8"
+                  stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          </svg>
+          Estoque
+          <span class="tag">em breve</span>
+        </a>
+
+        <a class="nav-link" href="pedidos.html?status=Separação">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 6h16v12H4V6Zm4 4h8m-8 4h5"
+                  stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          Faturamento
+        </a>
+
+        <a class="nav-link" href="financeiro.html">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 7h16v12H4V7Zm0 4h16M8 15h3"
+                  stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          Financeiro
+        </a>
+
+        <a class="nav-link" href="compras.html">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 5h2l2 10h9l2-7H8M10 19a1 1 0 1 0 0 .01M17 19a1 1 0 1 0 0 .01"
+                  stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Compras
+        </a>
+      </nav>
+
+      <div class="nav-label" style="margin-top:14px">Administração</div>
+
+      <nav class="nav">
+        <a class="nav-link" href="usuarios.html">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 2a3 3 0 1 0 0-6m-7 7c-4 0-6 2-6 5h12c0-3-2-5-6-5Zm7 0c3 0 5 2 5 5h-4"
+                  stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Usuários
+          <span class="tag">em breve</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <a class="catalog-link" href="catalogo.html" target="_blank">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+            <path d="M14 5h5v5M19 5l-8 8M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"
+                  stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          Abrir catálogo público
+        </a>
+
+        <a class="logout-link" href="login.html">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+            <path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"
+                  stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="top-left">
+          <button class="menu-btn" onclick="openSidebar()" aria-label="Abrir menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M4 7h16M4 12h16M4 17h16"
+                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+
+          <div class="page-title">
+            <strong>Painel Administrativo</strong>
+            <span>Campello Distribuição</span>
+          </div>
+        </div>
+
+        <div class="user-box">
+          <div class="user-copy">
+            <strong>Administrativo</strong>
+            <span>Acesso total</span>
+          </div>
+          <div class="user-avatar">AD</div>
+        </div>
+      </header>
+
+      <div class="content">
+
+        <section class="welcome">
+          <div>
+            <h1>Visão geral</h1>
+            <p>Acompanhe a operação da Campello Distribuição em um único lugar.</p>
+          </div>
+
+          <div class="status-pill">● Sistema conectado</div>
+        </section>
+
+        <section class="metrics">
+          <div class="metric">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M6 3h12v18H6V3Zm3 5h6M9 12h6M9 16h4"
+                      stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <strong>--</strong>
+              <span>Orçamentos pendentes</span>
+              <small>Será conectado ao Apps Script</small>
+            </div>
+          </div>
+
+          <div class="metric">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 6h14v14H5V6Zm3-3h8v3H8V3"
+                      stroke="currentColor" stroke-width="1.7"/>
+              </svg>
+            </div>
+            <div>
+              <strong>--</strong>
+              <span>Pedidos abertos</span>
+              <small>Inclui pedidos sob encomenda</small>
+            </div>
+          </div>
+
+          <div class="metric">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M4 6h16v12H4V6Zm4 4h8m-8 4h5"
+                      stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <strong>--</strong>
+              <span>Aguardando faturamento</span>
+              <small>Pedidos em separação</small>
+            </div>
+          </div>
+
+          <div class="metric">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M4 7h16v12H4V7Zm0 4h16M8 15h3"
+                      stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <strong>R$ --</strong>
+              <span>Contas a receber</span>
+              <small>Títulos em aberto</small>
+            </div>
+          </div>
+
+          <div class="metric">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M4 7h16v12H4V7Zm0 4h16M13 15h3"
+                      stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <strong>R$ --</strong>
+              <span>Contas a pagar</span>
+              <small>Títulos em aberto</small>
+            </div>
+          </div>
+
+          <div class="metric">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="m4 8 8-4 8 4-8 4-8-4Zm0 0v8l8 4 8-4V8M12 12v8"
+                      stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <strong>--</strong>
+              <span>Itens em atenção</span>
+              <small>Estoque será integrado depois</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="dashboard-grid">
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <strong>Acessos rápidos</strong>
+                <span style="display:block;margin-top:3px">Principais operações administrativas</span>
+              </div>
+            </div>
+
+            <div class="panel-body">
+              <div class="actions">
+
+                <a class="action-card" href="pedidos.html?status=Orçamento">
+                  <div class="action-icon">📄</div>
+                  <div>
+                    <strong>Revisar orçamentos</strong>
+                    <span>Analise solicitações recebidas pelo catálogo.</span>
+                  </div>
+                </a>
+
+                <a class="action-card" href="pedidos.html">
+                  <div class="action-icon">📦</div>
+                  <div>
+                    <strong>Acompanhar pedidos</strong>
+                    <span>Pedidos abertos, separação, faturados e entregues.</span>
+                  </div>
+                </a>
+
+                <a class="action-card" href="pedidos.html?status=Separação">
+                  <div class="action-icon">🧾</div>
+                  <div>
+                    <strong>Faturamento</strong>
+                    <span>Finalize vendas prontas para saída e financeiro.</span>
+                  </div>
+                </a>
+
+                <a class="action-card" href="financeiro.html">
+                  <div class="action-icon">💰</div>
+                  <div>
+                    <strong>Financeiro</strong>
+                    <span>Contas a receber, pagar e baixas financeiras.</span>
+                  </div>
+                </a>
+
+                <a class="action-card" href="compras.html">
+                  <div class="action-icon">🛒</div>
+                  <div>
+                    <strong>Compras</strong>
+                    <span>Entradas, fornecedores e importação de XML.</span>
+                  </div>
+                </a>
+
+                <div class="action-card disabled">
+                  <div class="action-icon">👥</div>
+                  <div>
+                    <strong>Usuários</strong>
+                    <span>Criação e permissões será o próximo módulo da intranet.</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <strong>Precisa de atenção</strong>
+                <span style="display:block;margin-top:3px">Pendências da operação</span>
+              </div>
+            </div>
+
+            <div class="empty">
+              <div class="empty-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 8v5m0 4h.01M10.3 4.8 3.4 17a2 2 0 0 0 1.75 3h13.7a2 2 0 0 0 1.75-3L13.7 4.8a2 2 0 0 0-3.4 0Z"
+                        stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <strong>Indicadores ainda não conectados</strong>
+              <p>Na próxima etapa podemos puxar pedidos, financeiro e estoque diretamente do Apps Script.</p>
+            </div>
+          </div>
+
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    function openSidebar(){
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar(){
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    window.addEventListener('resize',()=>{
+      if(window.innerWidth > 760){
+        closeSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

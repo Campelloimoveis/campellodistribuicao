@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intranet — Campello Distribuição</title>
+  <meta name="theme-color" content="#0b2b4f" />
+  <style>
+    :root{
+      --navy:#0b2b4f;
+      --navy-2:#123f73;
+      --blue:#2f69a6;
+      --red:#e31e24;
+      --text:#12243b;
+      --muted:#68798d;
+      --line:#d9e1e8;
+      --surface:#ffffff;
+      --bg:#eef3f8;
+    }
+
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
+
+    html,body{
+      min-height:100%;
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
+      background:var(--bg);
+    }
+
+    body{
+      min-height:100vh;
+    }
+
+    .page{
+      min-height:100vh;
+      display:grid;
+      grid-template-columns:minmax(380px, 46%) 1fr;
+    }
+
+    /* =========================
+       LADO ABSTRATO
+       ========================= */
+    .visual{
+      position:relative;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      padding:48px;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(126,176,231,.75), transparent 28%),
+        radial-gradient(circle at 78% 72%, rgba(67,124,188,.42), transparent 24%),
+        linear-gradient(145deg, #173f70 0%, #0a294c 48%, #061a30 100%);
+      isolation:isolate;
+    }
+
+    .visual::before,
+    .visual::after{
+      content:"";
+      position:absolute;
+      inset:auto;
+      pointer-events:none;
+      z-index:-1;
+    }
+
+    .visual::before{
+      width:78%;
+      height:130%;
+      left:-28%;
+      bottom:-56%;
+      transform:rotate(-42deg);
+      border-radius:90px;
+      background:linear-gradient(
+        90deg,
+        rgba(87,151,220,.58),
+        rgba(103,166,233,.16)
+      );
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.32) inset,
+        70px -110px 150px rgba(100,166,237,.18);
+    }
+
+    .visual::after{
+      width:78%;
+      height:78%;
+      right:-42%;
+      top:-24%;
+      transform:rotate(45deg);
+      border:1px solid rgba(255,255,255,.28);
+      border-radius:110px;
+      box-shadow:
+        -120px 90px 160px rgba(87,151,220,.13),
+        -1px 0 0 rgba(255,255,255,.08);
+    }
+
+    .abstract-line{
+      position:absolute;
+      width:77%;
+      height:34%;
+      left:-10%;
+      top:43%;
+      border:1px solid rgba(255,255,255,.48);
+      border-right:none;
+      border-radius:0 160px 160px 0;
+      transform:rotate(1deg);
+      opacity:.72;
+      z-index:-1;
+    }
+
+    .brand{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+      gap:18px;
+      z-index:2;
+    }
+
+    .brand-logo{
+      width:min(230px, 58vw);
+      max-height:190px;
+      object-fit:contain;
+      filter:drop-shadow(0 16px 28px rgba(0,0,0,.24));
+    }
+
+    .brand-fallback{
+      display:none;
+      color:#fff;
+      text-align:center;
+    }
+
+    .brand-fallback strong{
+      display:block;
+      font-size:36px;
+      letter-spacing:.02em;
+    }
+
+    .brand-fallback span{
+      display:block;
+      font-size:22px;
+      margin-top:4px;
+      letter-spacing:.08em;
+    }
+
+    /* =========================
+       LOGIN
+       ========================= */
+    .login-side{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:42px;
+      background:
+        radial-gradient(circle at 35% 22%, rgba(40,104,169,.08), transparent 30%),
+        linear-gradient(135deg, #f8fafc 0%, #eef3f8 100%);
+    }
+
+    .card{
+      width:min(100%, 580px);
+      background:rgba(255,255,255,.96);
+      border:1px solid rgba(11,43,79,.06);
+      border-radius:22px;
+      padding:52px 42px 38px;
+      box-shadow:
+        0 24px 70px rgba(11,43,79,.10),
+        0 4px 14px rgba(11,43,79,.05);
+      backdrop-filter:blur(7px);
+    }
+
+    .title{
+      text-align:center;
+      margin-bottom:38px;
+    }
+
+    .title h1{
+      font-size:clamp(29px,3vw,38px);
+      line-height:1.15;
+      letter-spacing:-.025em;
+      color:var(--navy);
+    }
+
+    .field{
+      margin-bottom:20px;
+    }
+
+    label{
+      display:block;
+      margin-bottom:8px;
+      font-size:15px;
+      font-weight:700;
+      color:#172b45;
+    }
+
+    .input-wrap{
+      position:relative;
+    }
+
+    .input-wrap input{
+      width:100%;
+      height:56px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:#fff;
+      color:var(--text);
+      font-size:16px;
+      padding:0 48px;
+      outline:none;
+      transition:.18s ease;
+    }
+
+    .input-wrap input::placeholder{
+      color:#8391a2;
+    }
+
+    .input-wrap input:focus{
+      border-color:#7aa7d6;
+      box-shadow:0 0 0 4px rgba(47,105,166,.10);
+    }
+
+    .input-icon,
+    .password-toggle{
+      position:absolute;
+      top:50%;
+      transform:translateY(-50%);
+      display:grid;
+      place-items:center;
+      color:#61778e;
+    }
+
+    .input-icon{
+      left:16px;
+      pointer-events:none;
+    }
+
+    .password-toggle{
+      right:14px;
+      border:0;
+      background:transparent;
+      cursor:pointer;
+      width:32px;
+      height:32px;
+      border-radius:7px;
+    }
+
+    .password-toggle:hover{
+      background:#f1f5f9;
+    }
+
+    .options{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      margin:4px 0 26px;
+      font-size:14px;
+    }
+
+    .remember{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:#263a52;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    .remember input{
+      width:18px;
+      height:18px;
+      accent-color:var(--navy);
+    }
+
+    a{
+      color:#0068e8;
+      text-decoration:none;
+      font-weight:600;
+    }
+
+    a:hover{
+      text-decoration:underline;
+    }
+
+    .login-btn{
+      width:100%;
+      height:58px;
+      border:0;
+      border-radius:10px;
+      background:linear-gradient(90deg,#0b315a,#0a2a4d);
+      color:#fff;
+      font-size:18px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.18s ease;
+      box-shadow:0 8px 18px rgba(11,43,79,.14);
+    }
+
+    .login-btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 10px 24px rgba(11,43,79,.20);
+    }
+
+    .login-btn:active{
+      transform:translateY(0);
+    }
+
+    .divider{
+      height:1px;
+      background:var(--line);
+      margin:34px 0 26px;
+    }
+
+    .public-link{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:9px;
+      font-size:16px;
+    }
+
+    .public-link svg{
+      width:20px;
+      height:20px;
+    }
+
+    .error{
+      display:none;
+      margin:0 0 20px;
+      padding:12px 14px;
+      border-radius:9px;
+      background:#fff1f2;
+      border:1px solid #fecdd3;
+      color:#b42318;
+      font-size:14px;
+    }
+
+    .error.show{
+      display:block;
+    }
+
+    @media (max-width: 900px){
+      .page{
+        grid-template-columns:1fr;
+      }
+
+      .visual{
+        min-height:230px;
+        padding:28px 20px;
+      }
+
+      .brand-logo{
+        width:150px;
+        max-height:112px;
+      }
+
+      .abstract-line{
+        width:92%;
+        height:70%;
+        top:10%;
+      }
+
+      .login-side{
+        min-height:calc(100vh - 230px);
+        padding:28px 18px 34px;
+        align-items:flex-start;
+      }
+
+      .card{
+        margin-top:-22px;
+        padding:38px 24px 28px;
+        border-radius:20px;
+        position:relative;
+        z-index:5;
+      }
+
+      .title{
+        margin-bottom:28px;
+      }
+    }
+
+    @media (max-width: 520px){
+      .visual{
+        min-height:180px;
+      }
+
+      .brand-logo{
+        width:125px;
+        max-height:90px;
+      }
+
+      .login-side{
+        min-height:calc(100vh - 180px);
+        padding:18px 12px 26px;
+      }
+
+      .card{
+        width:100%;
+        margin-top:-16px;
+        padding:32px 18px 24px;
+        border-radius:18px;
+      }
+
+      .options{
+        align-items:flex-start;
+        flex-direction:column;
+        gap:12px;
+      }
+
+      .input-wrap input{
+        height:54px;
+      }
+
+      .login-btn{
+        height:56px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <section class="visual" aria-label="Campello Distribuição">
+      <div class="abstract-line"></div>
+
+      <div class="brand">
+        <!--
+          TROQUE APENAS O CAMINHO ABAIXO caso sua logo tenha outro nome.
+          Exemplo atual: imagens/logo-campello.png
+        -->
+        <img
+          id="brandLogo"
+          class="brand-logo"
+          src="imagens/logo-campello.png"
+          alt="Campello Distribuição"
+          onerror="this.style.display='none';document.getElementById('brandFallback').style.display='block';"
+        >
+
+        <div id="brandFallback" class="brand-fallback">
+          <strong>CAMPELLO</strong>
+          <span>DISTRIBUIÇÃO</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="login-side">
+      <div class="card">
+        <div class="title">
+          <h1>Acesso à intranet</h1>
+        </div>
+
+        <div id="loginError" class="error" role="alert"></div>
+
+        <form id="loginForm" autocomplete="on">
+          <div class="field">
+            <label for="usuario">Usuário</label>
+            <div class="input-wrap">
+              <span class="input-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"
+                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </span>
+
+              <input
+                id="usuario"
+                name="usuario"
+                type="text"
+                placeholder="Digite seu usuário"
+                autocomplete="username"
+                required
+              >
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="senha">Senha</label>
+            <div class="input-wrap">
+              <span class="input-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <rect x="5" y="10" width="14" height="10" rx="2"
+                        stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M8 10V7a4 4 0 0 1 8 0v3"
+                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </span>
+
+              <input
+                id="senha"
+                name="senha"
+                type="password"
+                placeholder="Digite sua senha"
+                autocomplete="current-password"
+                required
+              >
+
+              <button
+                id="togglePassword"
+                class="password-toggle"
+                type="button"
+                aria-label="Mostrar senha"
+              >
+                <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+                        stroke="currentColor" stroke-width="1.7"/>
+                  <circle cx="12" cy="12" r="2.7"
+                          stroke="currentColor" stroke-width="1.7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="options">
+            <label class="remember">
+              <input id="lembrar" type="checkbox">
+              <span>Lembrar de mim</span>
+            </label>
+
+            <a href="#" id="forgotLink">Esqueceu a senha?</a>
+          </div>
+
+          <button class="login-btn" type="submit">
+            Entrar
+          </button>
+        </form>
+
+        <div class="divider"></div>
+
+        <a class="public-link" href="catalogo.html">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M14 5h5v5M19 5l-8 8"
+                  stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"
+                  stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round"/>
+          </svg>
+          <span>Acessar Catálogo</span>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const passwordInput = document.getElementById('senha');
+    const togglePassword = document.getElementById('togglePassword');
+    const loginError = document.getElementById('loginError');
+
+    togglePassword.addEventListener('click', () => {
+      const hidden = passwordInput.type === 'password';
+      passwordInput.type = hidden ? 'text' : 'password';
+      togglePassword.setAttribute(
+        'aria-label',
+        hidden ? 'Ocultar senha' : 'Mostrar senha'
+      );
+    });
+
+    document.getElementById('forgotLink').addEventListener('click', (event) => {
+      event.preventDefault();
+
+      alert(
+        'A recuperação de senha será vinculada ao painel administrativo.'
+      );
+    });
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const usuario = document.getElementById('usuario').value.trim();
+      const senha = passwordInput.value;
+
+      loginError.classList.remove('show');
+      loginError.textContent = '';
+
+      if (!usuario || !senha) {
+        loginError.textContent = 'Informe usuário e senha.';
+        loginError.classList.add('show');
+        return;
+      }
+
+      /*
+        IMPORTANTE:
+        Esta tela já está pronta visualmente.
+
+        O próximo passo é substituir este trecho pela autenticação real
+        no Google Apps Script, com:
+
+        - usuário;
+        - senha com hash;
+        - sessão;
+        - perfil REPRESENTANTE ou ADMINISTRATIVO;
+        - controle de permissões no backend.
+
+        Não salvar senha no localStorage.
+        Não validar senha apenas no JavaScript.
+      */
+
+      loginError.textContent =
+        'Interface pronta. A autenticação será conectada ao backend no próximo passo.';
+      loginError.classList.add('show');
+    });
+  </script>
+</body>
+</html>
