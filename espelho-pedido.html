@@ -258,20 +258,24 @@ async function loadOrder(id){
   document.getElementById('sheet').innerHTML='<div class="loading">Carregando '+esc(id)+'...</div>';
 
   let order=null;
+  let snapshot=null;
 
   /*
-   * Primeiro tenta usar o snapshot enviado pela tela de Pedidos.
-   * Assim o espelho abre instantaneamente mesmo se a API estiver lenta.
+   * O snapshot continua existindo como segurança, porém agora a
+   * consulta atual da API tem prioridade. Isso garante que nomes
+   * corrigidos no cadastro mestre apareçam no espelho imediatamente.
    */
   try{
     const raw=sessionStorage.getItem('campello_mirror_'+id);
-    if(raw) order=JSON.parse(raw);
+    if(raw) snapshot=JSON.parse(raw);
   }catch(e){}
 
-  if(!order){
-    try{
-      order=await fetchOrder(id);
-    }catch(err){
+  try{
+    order=await fetchOrder(id);
+  }catch(err){
+    if(snapshot){
+      order=snapshot;
+    }else{
       showError(err.message||String(err),id);
       return;
     }
@@ -342,7 +346,9 @@ function renderMirror(order,client){
       <tr>
         <td class="center">${index+1}</td>
         <td>${esc(item.sku||'')}</td>
-        <td class="desc">${esc(item.name||'')}</td>
+        <td class="desc">${
+          esc(item.name||'Produto não localizado')
+        }</td>
         <td class="center">${esc(item.unit||'UN')}</td>
         <td class="right">${qty(item.qty)}</td>
         <td class="right">${money(price)}</td>
