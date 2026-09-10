@@ -1491,6 +1491,10 @@ function renderActions(){
     `<button class="btn btn-light" onclick="closeOrder()">Fechar</button>`
   );
 
+  actions.push(
+    `<button class="btn btn-light" onclick="openOrderMirror()">Emitir espelho</button>`
+  );
+
   if(
     ['Orçamento','Pedido aberto','Separação'].includes(status)
   ){
@@ -1558,6 +1562,33 @@ function renderActions(){
   $('modalActions').innerHTML =
     actions.join('');
 }
+
+function openOrderMirror(){
+  if(!currentOrder){
+    toast('Abra um pedido antes de emitir o espelho.');
+    return;
+  }
+
+  /*
+   * Guardamos um snapshot temporário do pedido na própria guia.
+   * Isso permite que o espelho abra imediatamente, sem depender
+   * de uma segunda consulta à API.
+   */
+  try{
+    sessionStorage.setItem(
+      'campello_mirror_' + currentOrder.id,
+      JSON.stringify(currentOrder)
+    );
+  }catch(e){}
+
+  window.open(
+    'espelho-pedido.html?id=' +
+      encodeURIComponent(currentOrder.id),
+    '_blank',
+    'noopener'
+  );
+}
+
 
 function closeOrder(){
   $('orderModal').style.display =
