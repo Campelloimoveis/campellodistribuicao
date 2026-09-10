@@ -499,6 +499,32 @@ td.money,th.money{text-align:right}
   color:var(--navy);
   font-size:11px;
 }
+
+.card-surcharge{
+  margin-top:8px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.card-surcharge-item{
+  padding:9px 10px;
+  border-radius:8px;
+  background:#fffaf2;
+  border:1px solid #f1dfbd;
+}
+.card-surcharge-item span{
+  display:block;
+  color:#8a6a38;
+  font-size:8px;
+  text-transform:uppercase;
+  font-weight:800;
+}
+.card-surcharge-item strong{
+  display:block;
+  margin-top:4px;
+  color:#76521e;
+  font-size:12px;
+}
 .card-info{
   margin-top:8px;
   color:var(--muted);
@@ -866,7 +892,7 @@ td.money,th.money{text-align:right}
           <div class="payment-box">
             <div class="payment-head">
               <div>Forma de pagamento</div>
-              <div>Valor</div>
+              <div>Valor aplicado ao título</div>
               <div>Conta / Instituição</div>
               <div></div>
             </div>
@@ -1484,6 +1510,9 @@ function calculateCardRow(row){
   const method =
     row.querySelector('.payment-method-select')?.value || '';
 
+  const account =
+    row.querySelector('.payment-account')?.value || '';
+
   row.classList.toggle(
     'is-card',
     method === 'Cartão'
@@ -1493,146 +1522,111 @@ function calculateCardRow(row){
     return {
       amount,
       method,
-      account:
-        row.querySelector('.payment-account')?.value || ''
+      account
     };
   }
 
-  const cardType =
-    row.querySelector('.card-type').value;
+  const typeEl =
+    row.querySelector('.card-type');
 
   const installmentsEl =
     row.querySelector('.card-installments');
 
-  if(cardType === 'Débito'){
-    installmentsEl.value = '1';
-    installmentsEl.disabled = true;
-  }else{
-    installmentsEl.disabled = false;
-  }
-
-  const installments =
+  let installments =
     Number(
       installmentsEl.value || 1
     );
 
-  const feePercent =
-    Math.max(
-      0,
-      Number(
-        row.querySelector('.card-fee-percent').value || 0
-      )
-    );
+  if(installments > 1){
+    typeEl.value =
+      'Crédito';
+  }
 
-  const feeBearer =
-    row.querySelector('.card-fee-bearer').value;
-
-  const rate =
-    feePercent /
-    100;
+  if(typeEl.value === 'Débito'){
+    installments = 1;
+    installmentsEl.value =
+      '1';
+    installmentsEl.disabled =
+      true;
+  }else{
+    installmentsEl.disabled =
+      false;
+  }
 
   let chargedValue =
-    amount;
-
-  let feeValue =
-    0;
-
-  let netValue =
-    amount;
+    Number(
+      row.querySelector('.card-charged-input').value || 0
+    );
 
   if(
-    amount > 0 &&
-    rate > 0
+    chargedValue <= 0 &&
+    amount > 0
   ){
-    if(feeBearer === 'Cliente'){
-      chargedValue =
-        amount /
-        (
-          1 - rate
-        );
+    chargedValue =
+      amount;
 
-      feeValue =
-        chargedValue -
-        amount;
-
-      netValue =
-        amount;
-    }else{
-      feeValue =
-        amount *
-        rate;
-
-      netValue =
-        amount -
-        feeValue;
-    }
+    row.querySelector('.card-charged-input').value =
+      amount.toFixed(2);
   }
 
-  const round2 =
-    value =>
-      Math.round(
-        Number(value || 0) *
+  const surchargeValue =
+    Math.max(
+      0,
+      chargedValue -
+      amount
+    );
+
+  const surchargePercent =
+    amount > 0
+      ? (
+          surchargeValue /
+          amount
+        ) *
         100
-      ) /
-      100;
+      : 0;
 
-  chargedValue =
-    round2(chargedValue);
-
-  feeValue =
-    round2(feeValue);
-
-  netValue =
-    round2(netValue);
+  row.querySelector('.card-applied-value').textContent =
+    money(
+      amount
+    );
 
   row.querySelector('.card-charged-value').textContent =
-    money(chargedValue);
+    money(
+      chargedValue
+    );
 
-  row.querySelector('.card-fee-value').textContent =
-    money(feeValue);
+  row.querySelector('.card-extra-value').textContent =
+    money(
+      surchargeValue
+    );
 
-  row.querySelector('.card-net-value').textContent =
-    money(netValue);
+  row.querySelector('.card-interest-value').textContent =
+    money(
+      surchargeValue
+    );
 
-  const mode =
-    row.querySelector('.card-settlement-mode').value;
-
-  const days =
-    row.querySelector('.card-first-days');
-
-  if(
-    !days.dataset.changed
-  ){
-    days.value =
-      cardType === 'Débito'
-        ? 1
-        : (
-            mode === 'Antecipado'
-              ? 1
-              : 30
-          );
-  }
+  row.querySelector('.card-interest-percent').textContent =
+    surchargePercent.toLocaleString(
+      'pt-BR',
+      {
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
+      }
+    ) +
+    '%';
 
   return {
     method,
     amount,
-    account:
-      row.querySelector('.payment-account').value,
-    cardType,
+    account,
+    cardType:
+      typeEl.value,
     installments,
-    feePercent,
-    feeBearer,
-    authorization:
-      row.querySelector('.card-authorization').value.trim(),
     chargedValue,
-    feeValue,
-    netValue,
-    settlementMode:
-      mode,
-    firstCreditDays:
-      Number(
-        days.value || 0
-      )
+    surchargeValue,
+    surchargePercent,
+    authorization:
+      row.querySelector('.card-authorization').value.trim()
   };
 }
 
@@ -1658,7 +1652,7 @@ function addPaymentRow(amount=null,method=null,account=null){
       0
     );
 
-  let initialAmount =
+  const initialAmount =
     amount !== null
       ? Number(amount)
       : Math.max(
@@ -1744,23 +1738,15 @@ function addPaymentRow(amount=null,method=null,account=null){
         </div>
 
         <div>
-          <label>Taxa total da operadora (%)</label>
+          <label>Valor cobrado no cartão</label>
           <input
-            class="card-fee-percent"
+            class="card-charged-input"
             type="number"
             min="0"
-            max="30"
             step="0.01"
-            value="0"
+            value="${initialAmount > 0 ? initialAmount.toFixed(2) : ''}"
+            placeholder="Valor passado no cartão"
           >
-        </div>
-
-        <div>
-          <label>Taxa assumida por</label>
-          <select class="card-fee-bearer">
-            <option value="Campello">Campello</option>
-            <option value="Cliente">Cliente</option>
-          </select>
         </div>
 
         <div>
@@ -1771,50 +1757,41 @@ function addPaymentRow(amount=null,method=null,account=null){
             placeholder="Opcional"
           >
         </div>
-
-        <div>
-          <label>Recebimento da operadora</label>
-          <select class="card-settlement-mode">
-            <option value="Conforme parcelas">Conforme parcelas</option>
-            <option value="Antecipado">Antecipado</option>
-          </select>
-        </div>
-
-        <div>
-          <label>Prazo do 1º crédito (dias)</label>
-          <input
-            class="card-first-days"
-            type="number"
-            min="0"
-            step="1"
-            value="30"
-          >
-        </div>
       </div>
 
       <div class="card-calc">
+        <div class="card-calc-item">
+          <span>Aplicado ao título</span>
+          <strong class="card-applied-value">R$ 0,00</strong>
+        </div>
+
         <div class="card-calc-item">
           <span>Valor cobrado no cartão</span>
           <strong class="card-charged-value">R$ 0,00</strong>
         </div>
 
         <div class="card-calc-item">
-          <span>Taxa da operadora</span>
-          <strong class="card-fee-value">R$ 0,00</strong>
+          <span>Acréscimo</span>
+          <strong class="card-extra-value">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <div class="card-surcharge">
+        <div class="card-surcharge-item">
+          <span>Diferença cobrada</span>
+          <strong class="card-interest-value">R$ 0,00</strong>
         </div>
 
-        <div class="card-calc-item">
-          <span>Líquido Campello</span>
-          <strong class="card-net-value">R$ 0,00</strong>
+        <div class="card-surcharge-item">
+          <span>Acréscimo percentual</span>
+          <strong class="card-interest-percent">0,00%</strong>
         </div>
       </div>
 
       <div class="card-info">
-        A <strong>Conta / Instituição</strong> identifica onde o dinheiro será recebido,
-        por exemplo Nubank, Mercado Pago ou PicPay.
-        Se <strong>Campello</strong> absorver a taxa, o valor líquido ficará menor.
-        Se escolher <strong>Cliente</strong>, o valor cobrado no cartão é ajustado
-        para que o líquido da Campello corresponda ao valor aplicado ao título.
+        Em <strong>Valor aplicado ao título</strong>, fica quanto será baixado da dívida.
+        Em <strong>Valor cobrado no cartão</strong>, informe quanto realmente passou no cartão.
+        A diferença é calculada automaticamente.
       </div>
     </div>
   `;
@@ -1832,12 +1809,12 @@ function addPaymentRow(amount=null,method=null,account=null){
   methodSelect.addEventListener(
     'change',
     () => {
-      const accountSelect =
+      const accountInput =
         wrapper.querySelector(
           '.payment-account'
         );
 
-      accountSelect.value =
+      accountInput.value =
         suggestedAccount(
           methodSelect.value
         );
@@ -1854,10 +1831,26 @@ function addPaymentRow(amount=null,method=null,account=null){
     )
     .addEventListener(
       'input',
-      () =>
+      () => {
+        const charged =
+          wrapper.querySelector(
+            '.card-charged-input'
+          );
+
+        if(
+          methodSelect.value === 'Cartão' &&
+          charged.dataset.edited !== '1'
+        ){
+          charged.value =
+            wrapper.querySelector(
+              '.payment-amount'
+            ).value;
+        }
+
         updateCardRow(
           wrapper
-        )
+        );
+      }
     );
 
   wrapper
@@ -1865,17 +1858,14 @@ function addPaymentRow(amount=null,method=null,account=null){
       '.payment-account'
     )
     .addEventListener(
-      'change',
+      'input',
       updatePaymentsSummary
     );
 
   [
     '.card-type',
     '.card-installments',
-    '.card-fee-percent',
-    '.card-fee-bearer',
-    '.card-authorization',
-    '.card-settlement-mode'
+    '.card-authorization'
   ].forEach(
     selector => {
       wrapper
@@ -1892,30 +1882,20 @@ function addPaymentRow(amount=null,method=null,account=null){
     }
   );
 
-  wrapper
-    .querySelector(
-      '.card-fee-percent'
-    )
-    .addEventListener(
-      'input',
-      () =>
-        updateCardRow(
-          wrapper
-        )
-    );
-
-  const days =
+  const chargedInput =
     wrapper.querySelector(
-      '.card-first-days'
+      '.card-charged-input'
     );
 
-  days.addEventListener(
+  chargedInput.addEventListener(
     'input',
     () => {
-      days.dataset.changed =
+      chargedInput.dataset.edited =
         '1';
 
-      updatePaymentsSummary();
+      updateCardRow(
+        wrapper
+      );
     }
   );
 
@@ -2122,11 +2102,10 @@ async function loadHistory(titleId){
           ${
             h.paymentMethod === 'Cartão'
               ? `<div class="history-meta">
-                   Conta: ${esc(h.account || '-')} ·
-                   Taxa ${Number(h.feePercent || 0).toLocaleString('pt-BR',{maximumFractionDigits:2})}% (${esc(h.feeBearer || 'Campello')})
-                   · Taxa: ${money(h.feeValue || 0)}
-                   · Líquido: ${money(h.netValue || 0)}
-                   · Cobrado: ${money(h.chargedValue || h.amount)}
+                   Aplicado ao título: ${money(h.amount)}
+                   · Cobrado no cartão: ${money(h.chargedValue || h.amount)}
+                   · Acréscimo: ${money(h.surchargeValue || 0)}
+                   (${Number(h.surchargePercent || 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}%)
                    ${h.authorization ? ' · NSU: ' + esc(h.authorization) : ''}
                  </div>`
               : ''
@@ -2503,14 +2482,14 @@ async function confirmSettlement(){
           !['Crédito','Débito'].includes(item.cardType) ||
           Number(item.installments || 0) < 1 ||
           Number(item.installments || 0) > 24 ||
-          Number(item.feePercent || 0) < 0 ||
-          Number(item.feePercent || 0) > 30
+          Number(item.chargedValue || 0) + 0.01 <
+            Number(item.amount || 0)
         )
     );
 
   if(invalidCard){
     toast(
-      'Confira modalidade, parcelas e taxa do pagamento em cartão.'
+      'Confira modalidade, parcelas e valor cobrado no cartão.'
     );
     return;
   }
