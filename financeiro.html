@@ -566,6 +566,134 @@ td.money,th.money{text-align:right}
   font-weight:800;
   font-size:11px;
 }
+
+.receipt-mirror{
+  display:none;
+  margin-bottom:14px;
+  border:1px solid #cfdce7;
+  border-radius:12px;
+  overflow:hidden;
+  background:#fff;
+}
+.receipt-mirror.show{display:block}
+.receipt-mirror-head{
+  padding:11px 12px;
+  background:#eef5fb;
+  border-bottom:1px solid #d9e4ed;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.receipt-mirror-head strong{
+  color:var(--navy);
+  font-size:12px;
+}
+.receipt-mirror-status{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:99px;
+  background:#eaf7f0;
+  color:#117143;
+  font-size:8px;
+  font-weight:900;
+}
+.receipt-summary-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  padding:11px 12px;
+}
+.receipt-summary-item{
+  background:#f7f9fb;
+  border-radius:9px;
+  padding:9px 10px;
+}
+.receipt-summary-item small{
+  display:block;
+  color:var(--muted);
+  font-size:8px;
+  text-transform:uppercase;
+  margin-bottom:4px;
+}
+.receipt-summary-item strong{
+  display:block;
+  color:var(--navy);
+  font-size:12px;
+}
+.receipt-methods{
+  border-top:1px solid #e0e7ed;
+}
+.receipt-method{
+  display:grid;
+  grid-template-columns:44px 1.25fr .9fr .9fr;
+  gap:8px;
+  align-items:start;
+  padding:10px 12px;
+  border-bottom:1px solid #edf1f4;
+}
+.receipt-method:last-child{border-bottom:0}
+.receipt-method-number{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:var(--navy);
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+}
+.receipt-method-title{
+  color:var(--navy);
+  font-weight:900;
+  font-size:10px;
+}
+.receipt-method-meta{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.45;
+}
+.receipt-method-value small{
+  display:block;
+  color:var(--muted);
+  text-transform:uppercase;
+  font-size:7px;
+  margin-bottom:3px;
+}
+.receipt-method-value strong{
+  color:var(--navy);
+  font-size:10px;
+}
+.receipt-audit-warning{
+  margin:0 12px 11px;
+  padding:8px 10px;
+  border-radius:8px;
+  background:#fff7e8;
+  color:#8c5a05;
+  font-size:9px;
+}
+.history-loading{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:10px;
+}
+.history-loading:before{
+  content:'';
+  width:13px;
+  height:13px;
+  border:2px solid #d3dde6;
+  border-top-color:var(--navy);
+  border-radius:50%;
+  animation:historySpin .7s linear infinite;
+}
+@keyframes historySpin{
+  to{transform:rotate(360deg)}
+}
 .history-actions{
   margin-top:8px;
 }
@@ -676,6 +804,10 @@ td.money,th.money{text-align:right}
   .payment-row .payment-method{grid-column:1/-1}
   .payment-row .payment-remove{justify-self:end}
   .card-grid{grid-template-columns:1fr 1fr}
+  .receipt-summary-grid{grid-template-columns:1fr 1fr}
+  .receipt-method{grid-template-columns:38px 1fr}
+  .receipt-method-value{grid-column:2}
+
   .card-calc{grid-template-columns:1fr}
 
 
@@ -923,6 +1055,17 @@ td.money,th.money{text-align:right}
         </div>
       </div>
 
+      <section id="receiptMirror" class="receipt-mirror">
+        <div class="receipt-mirror-head">
+          <strong>Espelho do recebimento</strong>
+          <span id="receiptMirrorStatus" class="receipt-mirror-status">REGISTRADO</span>
+        </div>
+
+        <div id="receiptSummary" class="receipt-summary-grid"></div>
+        <div id="receiptMethods" class="receipt-methods"></div>
+        <div id="receiptAuditWarning"></div>
+      </section>
+
       <section class="history">
         <h3>Histórico de baixas</h3>
         <div id="historyList" class="helper">Carregando...</div>
@@ -1125,6 +1268,8 @@ const CURRENT_AUTH_USER = requireLocalAuth(["ADMINISTRATIVO"]);
 
 let financeData = [];
 let currentTitle = null;
+let financeLoadInProgress = false;
+let historyRequestSeq = 0;
 let searchTimer = null;
 
 const $ = id => document.getElementById(id);
@@ -1232,10 +1377,24 @@ function apiGet(action, params={}, timeout=15000){
 }
 
 async function loadFinance(){
-  $('loading').style.display = 'block';
-  $('desktopTable').style.display = 'none';
-  $('mobileList').innerHTML = '';
-  $('empty').style.display = 'none';
+  if(financeLoadInProgress){
+    return;
+  }
+
+  financeLoadInProgress =
+    true;
+
+  $('loading').style.display =
+    'block';
+
+  $('desktopTable').style.display =
+    'none';
+
+  $('mobileList').innerHTML =
+    '';
+
+  $('empty').style.display =
+    'none';
 
   try{
     const data =
@@ -1248,7 +1407,7 @@ async function loadFinance(){
           period:$('periodFilter').value,
           limit:500
         },
-        20000
+        30000
       );
 
     if(!data.ok){
@@ -1291,11 +1450,12 @@ async function loadFinance(){
       'block';
 
     $('empty').textContent =
-      err.message || String(err);
+      err.message ||
+      String(err);
 
-    toast(
-      err.message || String(err)
-    );
+  }finally{
+    financeLoadInProgress =
+      false;
   }
 }
 
@@ -1969,6 +2129,279 @@ function updatePaymentsSummary(){
 }
 
 
+
+function activeSettlementHistory(history){
+  return history.filter(
+    item =>
+      !item.isReversal &&
+      !item.reversed
+  );
+}
+
+function renderReceiptMirror(history){
+  const mirror =
+    $('receiptMirror');
+
+  if(
+    !mirror ||
+    !currentTitle
+  ){
+    return;
+  }
+
+  const active =
+    activeSettlementHistory(
+      history
+    );
+
+  if(!active.length){
+    mirror.classList.remove(
+      'show'
+    );
+
+    $('receiptSummary').innerHTML =
+      '';
+
+    $('receiptMethods').innerHTML =
+      '';
+
+    $('receiptAuditWarning').innerHTML =
+      '';
+
+    return;
+  }
+
+  const totalApplied =
+    active.reduce(
+      (sum,item) =>
+        sum +
+        Number(
+          item.amount || 0
+        ),
+      0
+    );
+
+  const totalCharged =
+    active.reduce(
+      (sum,item) =>
+        sum +
+        Number(
+          item.paymentMethod === 'Cartão'
+            ? (
+                item.chargedValue ||
+                item.amount ||
+                0
+              )
+            : (
+                item.amount ||
+                0
+              )
+        ),
+      0
+    );
+
+  const totalSurcharge =
+    active.reduce(
+      (sum,item) =>
+        sum +
+        Number(
+          item.surchargeValue || 0
+        ),
+      0
+    );
+
+  const responsaveis =
+    [
+      ...new Set(
+        active
+          .map(
+            item =>
+              item.responsible
+          )
+          .filter(
+            Boolean
+          )
+      )
+    ];
+
+  const datas =
+    [
+      ...new Set(
+        active
+          .map(
+            item =>
+              item.date
+          )
+          .filter(
+            Boolean
+          )
+      )
+    ];
+
+  $('receiptSummary').innerHTML = `
+    <div class="receipt-summary-item">
+      <small>Aplicado ao título</small>
+      <strong>${money(totalApplied)}</strong>
+    </div>
+
+    <div class="receipt-summary-item">
+      <small>Total efetivamente cobrado</small>
+      <strong>${money(totalCharged)}</strong>
+    </div>
+
+    <div class="receipt-summary-item">
+      <small>Acréscimos</small>
+      <strong>${money(totalSurcharge)}</strong>
+    </div>
+
+    <div class="receipt-summary-item">
+      <small>Responsável</small>
+      <strong>${esc(responsaveis.join(', ') || '-')}</strong>
+    </div>
+
+    <div class="receipt-summary-item">
+      <small>Data da baixa</small>
+      <strong>${esc(datas.join(', ') || '-')}</strong>
+    </div>
+
+    <div class="receipt-summary-item">
+      <small>Formas registradas</small>
+      <strong>${active.length}</strong>
+    </div>
+
+    <div class="receipt-summary-item">
+      <small>Valor previsto</small>
+      <strong>${money(currentTitle.expected)}</strong>
+    </div>
+
+    <div class="receipt-summary-item">
+      <small>Saldo atual</small>
+      <strong>${money(currentTitle.balance)}</strong>
+    </div>
+  `;
+
+  $('receiptMethods').innerHTML =
+    active.map(
+      (h,index) => {
+        const isCard =
+          h.paymentMethod ===
+          'Cartão';
+
+        const methodTitle =
+          isCard
+            ? [
+                'Cartão',
+                h.cardType || '',
+                h.installments
+                  ? h.installments + 'x'
+                  : ''
+              ]
+                .filter(Boolean)
+                .join(' · ')
+            : (
+                h.paymentMethod ||
+                'Pagamento'
+              );
+
+        const applied =
+          Number(
+            h.amount || 0
+          );
+
+        const charged =
+          isCard
+            ? Number(
+                h.chargedValue ||
+                applied
+              )
+            : applied;
+
+        const surcharge =
+          Number(
+            h.surchargeValue || 0
+          );
+
+        return `
+          <div class="receipt-method">
+            <div class="receipt-method-number">
+              ${index + 1}
+            </div>
+
+            <div>
+              <div class="receipt-method-title">
+                ${esc(methodTitle)}
+              </div>
+
+              <div class="receipt-method-meta">
+                ${h.account ? 'Conta: ' + esc(h.account) : ''}
+                ${h.responsible ? ' · por ' + esc(h.responsible) : ''}
+                ${h.authorization ? ' · NSU: ' + esc(h.authorization) : ''}
+              </div>
+            </div>
+
+            <div class="receipt-method-value">
+              <small>Aplicado ao título</small>
+              <strong>${money(applied)}</strong>
+            </div>
+
+            <div class="receipt-method-value">
+              <small>${isCard ? 'Cobrado' : 'Recebido'}</small>
+              <strong>${money(charged)}</strong>
+              ${
+                surcharge > 0
+                  ? `<div class="receipt-method-meta">
+                       Acréscimo ${money(surcharge)}
+                       · ${Number(h.surchargePercent || 0).toLocaleString(
+                         'pt-BR',
+                         {
+                           minimumFractionDigits:2,
+                           maximumFractionDigits:2
+                         }
+                       )}%
+                     </div>`
+                  : ''
+              }
+            </div>
+          </div>
+        `;
+      }
+    ).join('');
+
+  const paidTitle =
+    Number(
+      currentTitle.paid || 0
+    );
+
+  if(
+    Math.abs(
+      totalApplied -
+      paidTitle
+    ) >
+    0.01
+  ){
+    $('receiptAuditWarning').innerHTML = `
+      <div class="receipt-audit-warning">
+        Atenção: o título informa ${money(paidTitle)} como baixado,
+        enquanto o histórico ativo soma ${money(totalApplied)}.
+        Vale revisar registros antigos deste título.
+      </div>
+    `;
+  }else{
+    $('receiptAuditWarning').innerHTML =
+      '';
+  }
+
+  $('receiptMirrorStatus').textContent =
+    Number(currentTitle.balance || 0) <= 0.01
+      ? 'LIQUIDADO'
+      : 'BAIXA PARCIAL';
+
+  mirror.classList.add(
+    'show'
+  );
+}
+
+
 async function openTitle(id){
   currentTitle =
     financeData.find(
@@ -2043,8 +2476,21 @@ async function openTitle(id){
       ? 'none'
       : 'inline-block';
 
+  $('receiptMirror').classList.remove(
+    'show'
+  );
+
+  $('receiptSummary').innerHTML =
+    '';
+
+  $('receiptMethods').innerHTML =
+    '';
+
+  $('receiptAuditWarning').innerHTML =
+    '';
+
   $('historyList').innerHTML =
-    'Carregando histórico...';
+    '<div class="history-loading">Carregando histórico do recebimento...</div>';
 
   $('settlementModal').style.display =
     'flex';
@@ -2055,16 +2501,55 @@ async function openTitle(id){
 }
 
 async function loadHistory(titleId){
+  const requestSeq =
+    ++historyRequestSeq;
+
+  const slowTimer =
+    setTimeout(
+      () => {
+        if(
+          requestSeq ===
+          historyRequestSeq
+        ){
+          $('historyList').innerHTML =
+            '<div class="history-loading">A planilha está respondendo. Aguarde mais alguns segundos...</div>';
+        }
+      },
+      7000
+    );
+
   try{
     const data =
       await apiGet(
         'financeHistory',
         {titleId},
-        12000
+        25000
       );
+
+    clearTimeout(
+      slowTimer
+    );
+
+    if(
+      requestSeq !==
+      historyRequestSeq
+    ){
+      return;
+    }
+
+    if(!data.ok){
+      throw new Error(
+        data.erro ||
+        'Não foi possível carregar o histórico.'
+      );
+    }
 
     const history =
       data.historico || [];
+
+    renderReceiptMirror(
+      history
+    );
 
     if(!history.length){
       $('historyList').innerHTML =
@@ -2105,7 +2590,13 @@ async function loadHistory(titleId){
                    Aplicado ao título: ${money(h.amount)}
                    · Cobrado no cartão: ${money(h.chargedValue || h.amount)}
                    · Acréscimo: ${money(h.surchargeValue || 0)}
-                   (${Number(h.surchargePercent || 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}%)
+                   (${Number(h.surchargePercent || 0).toLocaleString(
+                     'pt-BR',
+                     {
+                       minimumFractionDigits:2,
+                       maximumFractionDigits:2
+                     }
+                   )}%)
                    ${h.authorization ? ' · NSU: ' + esc(h.authorization) : ''}
                  </div>`
               : ''
@@ -2115,9 +2606,10 @@ async function loadHistory(titleId){
             Saldo: ${money(h.balanceBefore)} → ${money(h.balanceAfter)}
           </div>
 
-          ${h.notes
-            ? `<div class="history-meta">${esc(h.notes)}</div>`
-            : ''
+          ${
+            h.notes
+              ? `<div class="history-meta">${esc(h.notes)}</div>`
+              : ''
           }
 
           ${
@@ -2133,8 +2625,28 @@ async function loadHistory(titleId){
       `).join('');
 
   }catch(err){
-    $('historyList').textContent =
-      'Não foi possível carregar o histórico.';
+    clearTimeout(
+      slowTimer
+    );
+
+    if(
+      requestSeq !==
+      historyRequestSeq
+    ){
+      return;
+    }
+
+    $('historyList').innerHTML =
+      `<div class="helper">
+         Não foi possível carregar o histórico agora.
+         <button
+           class="btn btn-light"
+           style="margin-left:6px"
+           onclick="loadHistory('${jsSafe(titleId)}')"
+         >
+           Tentar novamente
+         </button>
+       </div>`;
   }
 }
 
@@ -2297,6 +2809,8 @@ async function undoSettlement(movementId){
 
 
 function closeSettlement(){
+  historyRequestSeq++;
+
   $('settlementModal').style.display =
     'none';
 
